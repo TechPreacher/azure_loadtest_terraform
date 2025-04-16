@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "resourceGroupName": {
+      "value": "rg-bicep-loadtest"
+    },
+    "loadTestName": {
+      "value": "bicep-loadtest"
+    },
+    "identityName": {
+      "value": "bicep-managed-identity"
+    },
+    "keyVaultName": {
+      "value": "bicep-keyvault"
+    },
+    "location": {
+      "value": "northeurope"
+    },
+    "keyVaultSku": {
+      "value": "standard"
+    },
+    "softDeleteRetentionInDays": {
+      "value": 7
+    },
+    "tags": {
+      "value": {
+        "environment": "dev",
+        "project": "bicep-load-testing"
+      }
+    }
+  }
+}
