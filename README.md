@@ -13,7 +13,36 @@ User credentials and JMeter script parameters are stored in the KeyVault.
 
 ## Deployment
 
-To deploy this template:
+### Using the Makefile
+
+The project includes a Makefile to simplify the deployment process:
+
+```bash
+# Show available commands
+make help
+
+# Login to Azure
+make login
+
+# Set the subscription
+make set-subscription SUBSCRIPTION_ID=your-subscription-id
+
+# Validate the Bicep template
+make validate
+
+# Lint the Bicep template
+make lint
+
+# Perform a what-if analysis (preview changes)
+make what-if SUBSCRIPTION_ID=your-subscription-id
+
+# Deploy the template
+make deploy SUBSCRIPTION_ID=your-subscription-id
+```
+
+### Manual Deployment
+
+To deploy manually:
 
 ```bash
 # Login to Azure
