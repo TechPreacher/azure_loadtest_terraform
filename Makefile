@@ -1,7 +1,7 @@
 # Makefile for Azure Bicep deployment
 
 # Default variables
-SUBSCRIPTION_ID ?= 
+SUBSCRIPTION_ID ?= 0b962213-fc84-4c8d-bc1a-2dce59741c5a
 PARAMETERS_FILE ?= parameters.json
 LOCATION ?= northeurope
 TEMPLATE_FILE ?= main.bicep

@@ -3,16 +3,16 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "resourceGroupName": {
-      "value": "rg-bicep-loadtest"
+      "value": "rg-sc-bicep-loadtest"
     },
     "loadTestName": {
-      "value": "bicep-loadtest"
+      "value": "sc-bicep-loadtest"
     },
     "identityName": {
-      "value": "bicep-managed-identity"
+      "value": "sc-bicep-managed-identity"
     },
     "keyVaultName": {
-      "value": "bicep-keyvault"
+      "value": "scbiceploadtestkv"
     },
     "location": {
       "value": "northeurope"
@@ -26,7 +26,7 @@
     "tags": {
       "value": {
         "environment": "dev",
-        "project": "bicep-load-testing"
+        "project": "sc-bicep-load-testing"
       }
     }
   }
