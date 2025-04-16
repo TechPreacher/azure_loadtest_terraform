@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.34.44.8038",
-      "templateHash": "10365367290539324843"
+      "templateHash": "11057960949947899919"
     }
   },
   "parameters": {
@@ -31,6 +31,31 @@
       "type": "string",
       "metadata": {
         "description": "The name of the Key Vault"
+      }
+    },
+    "postgresServerName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the PostgreSQL Flexible Server"
+      }
+    },
+    "postgresAdminUsername": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The admin username for PostgreSQL"
+      }
+    },
+    "postgresAdminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The admin password for PostgreSQL"
+      }
+    },
+    "postgresDatabaseName": {
+      "type": "string",
+      "defaultValue": "test",
+      "metadata": {
+        "description": "The name of the PostgreSQL database"
       }
     },
     "location": {
@@ -89,6 +114,18 @@
           "keyVaultName": {
             "value": "[parameters('keyVaultName')]"
           },
+          "postgresServerName": {
+            "value": "[parameters('postgresServerName')]"
+          },
+          "postgresAdminUsername": {
+            "value": "[parameters('postgresAdminUsername')]"
+          },
+          "postgresAdminPassword": {
+            "value": "[parameters('postgresAdminPassword')]"
+          },
+          "postgresDatabaseName": {
+            "value": "[parameters('postgresDatabaseName')]"
+          },
           "location": {
             "value": "[parameters('location')]"
           },
@@ -109,7 +146,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.34.44.8038",
-              "templateHash": "830693544687647235"
+              "templateHash": "16511120690962452599"
             }
           },
           "parameters": {
@@ -129,6 +166,31 @@
               "type": "string",
               "metadata": {
                 "description": "The name of the Key Vault"
+              }
+            },
+            "postgresServerName": {
+              "type": "string",
+              "metadata": {
+                "description": "The name of the PostgreSQL Flexible Server"
+              }
+            },
+            "postgresAdminUsername": {
+              "type": "securestring",
+              "metadata": {
+                "description": "The admin username for PostgreSQL"
+              }
+            },
+            "postgresAdminPassword": {
+              "type": "securestring",
+              "metadata": {
+                "description": "The admin password for PostgreSQL"
+              }
+            },
+            "postgresDatabaseName": {
+              "type": "string",
+              "defaultValue": "test",
+              "metadata": {
+                "description": "The name of the PostgreSQL database"
               }
             },
             "location": {
@@ -228,6 +290,141 @@
                 "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]",
                 "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('identityName'))]"
               ]
+            },
+            {
+              "type": "Microsoft.DBforPostgreSQL/flexibleServers",
+              "apiVersion": "2022-12-01",
+              "name": "[parameters('postgresServerName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "Standard_E2ds_v5",
+                "tier": "MemoryOptimized"
+              },
+              "properties": {
+                "version": "14",
+                "administratorLogin": "[parameters('postgresAdminUsername')]",
+                "administratorLoginPassword": "[parameters('postgresAdminPassword')]",
+                "storage": {
+                  "storageSizeGB": 128,
+                  "autoGrow": "Disabled"
+                },
+                "authConfig": {
+                  "activeDirectoryAuth": "Enabled",
+                  "passwordAuth": "Enabled",
+                  "tenantId": "[subscription().tenantId]"
+                },
+                "highAvailability": {
+                  "mode": "Disabled"
+                },
+                "backup": {
+                  "backupRetentionDays": 7,
+                  "geoRedundantBackup": "Disabled"
+                }
+              }
+            },
+            {
+              "type": "Microsoft.DBforPostgreSQL/flexibleServers/firewallRules",
+              "apiVersion": "2022-12-01",
+              "name": "[format('{0}/{1}', parameters('postgresServerName'), 'AllowAll')]",
+              "properties": {
+                "startIpAddress": "0.0.0.0",
+                "endIpAddress": "255.255.255.255"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresServerName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.DBforPostgreSQL/flexibleServers/firewallRules",
+              "apiVersion": "2022-12-01",
+              "name": "[format('{0}/{1}', parameters('postgresServerName'), 'AllowAzureServices')]",
+              "properties": {
+                "startIpAddress": "0.0.0.0",
+                "endIpAddress": "0.0.0.0"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresServerName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.DBforPostgreSQL/flexibleServers/databases",
+              "apiVersion": "2022-12-01",
+              "name": "[format('{0}/{1}', parameters('postgresServerName'), parameters('postgresDatabaseName'))]",
+              "properties": {
+                "charset": "UTF8",
+                "collation": "en_US.UTF8"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresServerName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.DBforPostgreSQL/flexibleServers/administrators",
+              "apiVersion": "2022-12-01",
+              "name": "[format('{0}/{1}', parameters('postgresServerName'), guid(subscription().id, resourceGroup().id, resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('identityName'))))]",
+              "properties": {
+                "principalType": "ServicePrincipal",
+                "principalName": "[parameters('identityName')]",
+                "tenantId": "[subscription().tenantId]",
+                "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('identityName')), '2023-01-31').principalId]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('identityName'))]",
+                "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresServerName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.DBforPostgreSQL/flexibleServers",
+              "apiVersion": "2022-12-01",
+              "name": "[format('{0}repl', parameters('postgresServerName'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "Standard_E2ds_v5",
+                "tier": "MemoryOptimized"
+              },
+              "properties": {
+                "version": "14",
+                "administratorLogin": "[parameters('postgresAdminUsername')]",
+                "administratorLoginPassword": "[parameters('postgresAdminPassword')]",
+                "storage": {
+                  "storageSizeGB": 128,
+                  "autoGrow": "Disabled"
+                },
+                "authConfig": {
+                  "activeDirectoryAuth": "Enabled",
+                  "passwordAuth": "Enabled",
+                  "tenantId": "[subscription().tenantId]"
+                },
+                "highAvailability": {
+                  "mode": "Disabled"
+                },
+                "backup": {
+                  "backupRetentionDays": 7,
+                  "geoRedundantBackup": "Disabled"
+                },
+                "replicationRole": "Replica",
+                "sourceServerResourceId": "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresServerName'))]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresServerName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.DBforPostgreSQL/flexibleServers/administrators",
+              "apiVersion": "2022-12-01",
+              "name": "[format('{0}/{1}', format('{0}repl', parameters('postgresServerName')), guid(subscription().id, resourceGroup().id, resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('identityName'))))]",
+              "properties": {
+                "principalType": "ServicePrincipal",
+                "principalName": "[parameters('identityName')]",
+                "tenantId": "[subscription().tenantId]",
+                "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('identityName')), '2023-01-31').principalId]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('identityName'))]",
+                "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', format('{0}repl', parameters('postgresServerName')))]"
+              ]
             }
           ],
           "outputs": {
@@ -262,6 +459,22 @@
             "keyVaultUri": {
               "type": "string",
               "value": "[reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2022-07-01').vaultUri]"
+            },
+            "postgresServerName": {
+              "type": "string",
+              "value": "[parameters('postgresServerName')]"
+            },
+            "postgresServerFqdn": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresServerName')), '2022-12-01').fullyQualifiedDomainName]"
+            },
+            "postgresReplicaServerName": {
+              "type": "string",
+              "value": "[format('{0}repl', parameters('postgresServerName'))]"
+            },
+            "postgresReplicaServerFqdn": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.DBforPostgreSQL/flexibleServers', format('{0}repl', parameters('postgresServerName'))), '2022-12-01').fullyQualifiedDomainName]"
             }
           }
         }
@@ -311,6 +524,22 @@
     "keyVaultUri": {
       "type": "string",
       "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'resourcesDeployment'), '2022-09-01').outputs.keyVaultUri.value]"
+    },
+    "postgresServerName": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'resourcesDeployment'), '2022-09-01').outputs.postgresServerName.value]"
+    },
+    "postgresServerFqdn": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'resourcesDeployment'), '2022-09-01').outputs.postgresServerFqdn.value]"
+    },
+    "postgresReplicaServerName": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'resourcesDeployment'), '2022-09-01').outputs.postgresReplicaServerName.value]"
+    },
+    "postgresReplicaServerFqdn": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'resourcesDeployment'), '2022-09-01').outputs.postgresReplicaServerFqdn.value]"
     }
   }
 }

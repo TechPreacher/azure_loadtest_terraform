@@ -64,3 +64,30 @@ az deployment sub create \
 - Azure Load Test resource
 - User Assigned Managed Identity
 - Key Vault with the Managed Identity assigned as Key Vault Administrator
+- PostgreSQL Flexible Server (Memory Optimized, Standard_E2ds_v5)
+  - Primary server
+  - Test database
+  - Public network access enabled
+  - Microsoft Entra authentication enabled
+- PostgreSQL Flexible Server Replica
+  - Read-only replica of the primary server
+  - Created using 'Replica' create mode
+
+## Manual Steps Required After Deployment
+
+After deployment, you need to manually add an AD administrator to the primary PostgreSQL server. The replica server will inherit the AD admin configuration automatically. The deployment script will output instructions, but the general command is:
+
+```bash
+az postgres flexible-server ad-admin create \
+  --server-name <postgres-server-name> \
+  --resource-group <resource-group-name> \
+  --object-id <your-aad-object-id> \
+  --principal-type User \
+  --display-name <your-aad-display-name>
+```
+
+You can get your AAD object ID by running:
+
+```bash
+az ad signed-in-user show --query id -o tsv
+```

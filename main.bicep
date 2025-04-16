@@ -17,6 +17,20 @@ param identityName string
 @description('The name of the Key Vault')
 param keyVaultName string
 
+@description('The name of the PostgreSQL Flexible Server')
+param postgresServerName string
+
+@description('The admin username for PostgreSQL')
+@secure()
+param postgresAdminUsername string
+
+@description('The admin password for PostgreSQL')
+@secure()
+param postgresAdminPassword string
+
+@description('The name of the PostgreSQL database')
+param postgresDatabaseName string = 'test'
+
 @description('Location for all resources')
 param location string
 
@@ -44,6 +58,10 @@ module resources 'resources.bicep' = {
     loadTestName: loadTestName
     identityName: identityName
     keyVaultName: keyVaultName
+    postgresServerName: postgresServerName
+    postgresAdminUsername: postgresAdminUsername
+    postgresAdminPassword: postgresAdminPassword
+    postgresDatabaseName: postgresDatabaseName
     location: location
     tags: tags
     keyVaultSku: keyVaultSku
@@ -61,3 +79,7 @@ output managedIdentityClientId string = resources.outputs.managedIdentityClientI
 output keyVaultId string = resources.outputs.keyVaultId
 output keyVaultName string = resources.outputs.keyVaultName
 output keyVaultUri string = resources.outputs.keyVaultUri
+output postgresServerName string = resources.outputs.postgresServerName
+output postgresServerFqdn string = resources.outputs.postgresServerFqdn
+output postgresReplicaServerName string = resources.outputs.postgresReplicaServerName
+output postgresReplicaServerFqdn string = resources.outputs.postgresReplicaServerFqdn
