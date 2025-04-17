@@ -120,6 +120,30 @@ resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01' =
   }
 }
 
+// PostgreSQL Add User Assigned Managed Identity
+// resource postgresIdentityAssignment 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2024-08-01' = {
+//   name: guid(postgresServer.id, managedIdentity.id, 'administrator')
+//   parent: postgresServer
+//   properties: {
+//     principalType: 'ServicePrincipal'
+//     principalName: managedIdentity.name
+//     tenantId: subscription().tenantId
+//   }
+//   dependsOn: [
+//     postgresDatabase
+//   ]
+// }
+resource postgresIdentityAssignment 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2024-08-01' = {
+  parent: postgresServer
+  name: 'activeDirectory'
+  properties: {
+    administratorType: 'ActiveDirectory'
+    login: managedIdentity.name
+    sid: managedIdentity.properties.principalId
+    tenantId: subscription().tenantId
+  }
+}
+
 // PostgreSQL Firewall Rules - Allow all
 resource postgresFirewallRuleAllowAll 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2022-12-01' = {
   name: 'AllowAll'
@@ -147,48 +171,6 @@ resource postgresDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2
   properties: {
     charset: 'UTF8'
     collation: 'en_US.UTF8'
-  }
-}
-
-// Store PostgreSQL credentials in Key Vault
-resource postgresUsernameSecret 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
-  parent: keyVault
-  name: 'postgres-username'
-  properties: {
-    value: postgresAdminUsername
-  }
-}
-
-resource postgresPasswordSecret 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
-  parent: keyVault
-  name: 'postgres-password'
-  properties: {
-    value: postgresAdminPassword
-  }
-}
-
-// Store server and database information in Key Vault
-resource postgresServerSecret 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
-  parent: keyVault
-  name: 'postgres-server'
-  properties: {
-    value: postgresServer.name
-  }
-}
-
-resource postgresDatabaseSecret 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
-  parent: keyVault
-  name: 'postgres-database'
-  properties: {
-    value: postgresDatabaseName
-  }
-}
-
-resource postgresFqdnSecret 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
-  parent: keyVault
-  name: 'postgres-fqdn'
-  properties: {
-    value: postgresServer.properties.fullyQualifiedDomainName
   }
 }
 
@@ -230,6 +212,49 @@ resource postgresReplicaServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-1
   dependsOn: [
     postgresDatabase  // Make sure the database exists before creating the replica
   ]
+}
+
+// Key Vault Secrets
+// Store PostgreSQL credentials in Key Vault
+resource postgresUsernameSecret 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+  parent: keyVault
+  name: 'postgres-username'
+  properties: {
+    value: postgresAdminUsername
+  }
+}
+
+resource postgresPasswordSecret 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+  parent: keyVault
+  name: 'postgres-password'
+  properties: {
+    value: postgresAdminPassword
+  }
+}
+
+// Store server and database information in Key Vault
+resource postgresServerSecret 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+  parent: keyVault
+  name: 'postgres-server'
+  properties: {
+    value: postgresServer.name
+  }
+}
+
+resource postgresDatabaseSecret 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+  parent: keyVault
+  name: 'postgres-database'
+  properties: {
+    value: postgresDatabaseName
+  }
+}
+
+resource postgresFqdnSecret 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+  parent: keyVault
+  name: 'postgres-fqdn'
+  properties: {
+    value: postgresServer.properties.fullyQualifiedDomainName
+  }
 }
 
 // Store replica server information in Key Vault

@@ -3,19 +3,19 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "resourceGroupName": {
-      "value": "rg-sc-bicep-loadtest"
+      "value": "rg-sc-bicep-test"
     },
     "loadTestName": {
       "value": "sc-bicep-loadtest"
     },
     "identityName": {
-      "value": "sc-bicep-managed-identity"
+      "value": "sc-bicep-mi"
     },
     "keyVaultName": {
-      "value": "scbiceploadtestkv"
+      "value": "scbicepkv"
     },
     "postgresServerName": {
-      "value": "scbiceppgserver"
+      "value": "scbiceppgdb"
     },
     "postgresAdminUsername": {
       "value": "pgadmin"
@@ -38,7 +38,7 @@
     "tags": {
       "value": {
         "environment": "dev",
-        "project": "sc-bicep-load-testing"
+        "project": "sc-bicep-test"
       }
     }
   }
