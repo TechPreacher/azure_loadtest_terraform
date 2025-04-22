@@ -133,6 +133,7 @@ resource "azurerm_postgresql_flexible_server" "primary" {
   administrator_password = var.postgres_admin_password
   storage_mb             = 131072 # 128 GB
   sku_name               = "MO_Standard_E2ds_v5"
+  zone                   = "1"    # Explicitly set zone to match HA config
   
   authentication {
     active_directory_auth_enabled = true
@@ -140,17 +141,16 @@ resource "azurerm_postgresql_flexible_server" "primary" {
     tenant_id                     = data.azurerm_client_config.current.tenant_id
   }
 
-  # high_availability configuration is needed but there's no disabled option
-  # we must use one of the available options, so we'll use SameZone
-  high_availability {
-    mode = "SameZone"
-    # This is actually not the same as "Disabled" in Bicep, but it's the closest option available
-  }
-
   backup_retention_days        = 7
   geo_redundant_backup_enabled = false
 
   tags = var.tags
+  
+  timeouts {
+    create = "60m"
+    update = "60m"
+    delete = "30m"
+  }
 }
 
 # Configure Active Directory Administrator for PostgreSQL
@@ -251,18 +251,12 @@ resource "azurerm_postgresql_flexible_server" "replica" {
   sku_name               = "MO_Standard_E2ds_v5"
   create_mode            = "Replica"
   source_server_id       = azurerm_postgresql_flexible_server.primary.id
+  zone                   = "3"    # Choose a different zone from primary
 
   authentication {
     active_directory_auth_enabled = true
     password_auth_enabled         = true
     tenant_id                     = data.azurerm_client_config.current.tenant_id
-  }
-
-  # high_availability configuration is needed but there's no disabled option
-  # we must use one of the available options, so we'll use SameZone
-  high_availability {
-    mode = "SameZone"
-    # This is actually not the same as "Disabled" in Bicep, but it's the closest option available
   }
 
   backup_retention_days        = 7
@@ -276,6 +270,7 @@ resource "azurerm_postgresql_flexible_server" "replica" {
   # Use timeouts to give operations more time to complete
   timeouts {
     create = "60m"  # Creating a replica can take a long time
+    update = "60m"
     delete = "30m"
   }
 
