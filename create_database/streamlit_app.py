@@ -6,12 +6,14 @@ This app allows users to:
 2. Create new orders for products
 """
 
-import streamlit as st
 import os
+import uuid
 from pathlib import Path
-from dotenv import load_dotenv
+from typing import Any, Dict, List, Optional, Type, TypeVar
+
 import pandas as pd
-from typing import Any, Dict, List, Optional
+import streamlit as st
+from dotenv import load_dotenv
 
 # SQLAlchemy imports
 from sqlalchemy import (
@@ -27,7 +29,6 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy.dialects.postgresql import UUID
-import uuid
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from sqlalchemy.sql import desc
 
@@ -54,6 +55,10 @@ DB_CONFIG = {
 # Define SQLAlchemy Base and Models
 Base = declarative_base()
 
+# Add type alias for mypy
+T = TypeVar('T', bound=Base)
+ModelType = Type[T]
+
 
 class Product(Base):
     __tablename__ = "products"
@@ -69,8 +74,10 @@ class Product(Base):
     orders = relationship("Order", back_populates="product")
 
     def __repr__(self) -> str:
-        return (f"<Product(id={self.id}, name='{self.name}', "
-                f"category='{self.category}', price={self.price})>")
+        return (
+            f"<Product(id={self.id}, name='{self.name}', "
+            f"category='{self.category}', price={self.price})>"
+        )
 
 
 class Order(Base):
@@ -85,8 +92,10 @@ class Order(Base):
     product = relationship("Product", back_populates="orders")
 
     def __repr__(self) -> str:
-        return (f"<Order(id={self.id}, product_id={self.product_id}, "
-                f"quantity={self.quantity})>")
+        return (
+            f"<Order(id={self.id}, product_id={self.product_id}, "
+            f"quantity={self.quantity})>"
+        )
 
 
 # Check if all required environment variables are set
@@ -114,11 +123,11 @@ def init_connection() -> Engine:
     """Connect to PostgreSQL database using SQLAlchemy."""
     try:
         # Create the connection string
-        user = DB_CONFIG['user']
-        pw = DB_CONFIG['password']
-        host = DB_CONFIG['host']
-        db = DB_CONFIG['database']
-        ssl = DB_CONFIG['sslmode']
+        user = DB_CONFIG["user"]
+        pw = DB_CONFIG["password"]
+        host = DB_CONFIG["host"]
+        db = DB_CONFIG["database"]
+        ssl = DB_CONFIG["sslmode"]
         conn_str = f"postgresql+psycopg2://{user}:{pw}@{host}/{db}"
         connection_string = f"{conn_str}?sslmode={ssl}"
 

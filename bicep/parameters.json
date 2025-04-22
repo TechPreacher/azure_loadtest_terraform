@@ -35,6 +35,30 @@
     "softDeleteRetentionInDays": {
       "value": 7
     },
+    "loadTestTestName": {
+      "value": "PostgreSQL Test Timed Load Testing"
+    },
+    "mainThreads": {
+      "value": 10
+    },
+    "mainLoops": {
+      "value": 100
+    },
+    "replicaThreads": {
+      "value": 40
+    },
+    "replicaLoops": {
+      "value": 400
+    },
+    "mainWritesPerMinute": {
+      "value": 120
+    },
+    "replicaReadsPerMinute": {
+      "value": 480
+    },
+    "engineInstances": {
+      "value": 40
+    },
     "tags": {
       "value": {
         "environment": "dev",

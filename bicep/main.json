@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.34.44.8038",
-      "templateHash": "4838608638307493931"
+      "templateHash": "13780440488299815852"
     }
   },
   "parameters": {
@@ -83,6 +83,62 @@
       "defaultValue": 7,
       "metadata": {
         "description": "Soft delete retention period in days"
+      }
+    },
+    "loadTestTestName": {
+      "type": "string",
+      "defaultValue": "PostgreSQL Test Timed Load Testing",
+      "metadata": {
+        "description": "The test name in Azure Load Testing"
+      }
+    },
+    "mainThreads": {
+      "type": "int",
+      "defaultValue": 10,
+      "metadata": {
+        "description": "Number of threads for main database operations"
+      }
+    },
+    "mainLoops": {
+      "type": "int",
+      "defaultValue": 100,
+      "metadata": {
+        "description": "Number of loops for main database operations"
+      }
+    },
+    "replicaThreads": {
+      "type": "int",
+      "defaultValue": 40,
+      "metadata": {
+        "description": "Number of threads for replica database operations"
+      }
+    },
+    "replicaLoops": {
+      "type": "int",
+      "defaultValue": 400,
+      "metadata": {
+        "description": "Number of loops for replica database operations"
+      }
+    },
+    "mainWritesPerMinute": {
+      "type": "int",
+      "defaultValue": 120,
+      "metadata": {
+        "description": "Main database writes per minute"
+      }
+    },
+    "replicaReadsPerMinute": {
+      "type": "int",
+      "defaultValue": 480,
+      "metadata": {
+        "description": "Replica database reads per minute"
+      }
+    },
+    "engineInstances": {
+      "type": "int",
+      "defaultValue": 40,
+      "metadata": {
+        "description": "Number of engine instances for the load test"
       }
     }
   },
@@ -565,6 +621,302 @@
       "dependsOn": [
         "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('resourceGroupName'))]"
       ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "loadTestDeployment",
+      "resourceGroup": "[parameters('resourceGroupName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "loadTestName": {
+            "value": "[parameters('loadTestName')]"
+          },
+          "userAssignedIdentityId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'resourcesDeployment'), '2022-09-01').outputs.managedIdentityId.value]"
+          },
+          "keyVaultName": {
+            "value": "[parameters('keyVaultName')]"
+          },
+          "keyVaultUri": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'resourcesDeployment'), '2022-09-01').outputs.keyVaultUri.value]"
+          },
+          "testName": {
+            "value": "[parameters('loadTestTestName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "primaryServerFqdn": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'resourcesDeployment'), '2022-09-01').outputs.postgresServerFqdn.value]"
+          },
+          "replicaServerFqdn": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'resourcesDeployment'), '2022-09-01').outputs.postgresReplicaServerFqdn.value]"
+          },
+          "mainThreads": {
+            "value": "[parameters('mainThreads')]"
+          },
+          "mainLoops": {
+            "value": "[parameters('mainLoops')]"
+          },
+          "replicaThreads": {
+            "value": "[parameters('replicaThreads')]"
+          },
+          "replicaLoops": {
+            "value": "[parameters('replicaLoops')]"
+          },
+          "mainWritesPerMinute": {
+            "value": "[parameters('mainWritesPerMinute')]"
+          },
+          "replicaReadsPerMinute": {
+            "value": "[parameters('replicaReadsPerMinute')]"
+          },
+          "engineInstances": {
+            "value": "[parameters('engineInstances')]"
+          },
+          "databaseName": {
+            "value": "[parameters('postgresDatabaseName')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.34.44.8038",
+              "templateHash": "18109856734347549922"
+            }
+          },
+          "parameters": {
+            "loadTestName": {
+              "type": "string",
+              "metadata": {
+                "description": "The name of the existing Azure Load Test resource"
+              }
+            },
+            "userAssignedIdentityId": {
+              "type": "string",
+              "metadata": {
+                "description": "The name of the User Assigned Managed Identity to use for Key Vault access"
+              }
+            },
+            "keyVaultName": {
+              "type": "string",
+              "metadata": {
+                "description": "The Key Vault name containing the secrets"
+              }
+            },
+            "keyVaultUri": {
+              "type": "string",
+              "metadata": {
+                "description": "The Key Vault URI"
+              }
+            },
+            "testName": {
+              "type": "string",
+              "defaultValue": "PostgreSQL Test Timed Load Testing",
+              "metadata": {
+                "description": "The test name in Azure Load Testing"
+              }
+            },
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Location for all resources"
+              }
+            },
+            "primaryServerFqdn": {
+              "type": "string",
+              "metadata": {
+                "description": "Primary PostgreSQL server FQDN"
+              }
+            },
+            "replicaServerFqdn": {
+              "type": "string",
+              "metadata": {
+                "description": "Replica PostgreSQL server FQDN"
+              }
+            },
+            "mainThreads": {
+              "type": "int",
+              "defaultValue": 10,
+              "metadata": {
+                "description": "Number of threads for main database operations"
+              }
+            },
+            "mainLoops": {
+              "type": "int",
+              "defaultValue": 100,
+              "metadata": {
+                "description": "Number of loops for main database operations"
+              }
+            },
+            "replicaThreads": {
+              "type": "int",
+              "defaultValue": 40,
+              "metadata": {
+                "description": "Number of threads for replica database operations"
+              }
+            },
+            "replicaLoops": {
+              "type": "int",
+              "defaultValue": 400,
+              "metadata": {
+                "description": "Number of loops for replica database operations"
+              }
+            },
+            "mainWritesPerMinute": {
+              "type": "int",
+              "defaultValue": 120,
+              "metadata": {
+                "description": "Main database writes per minute"
+              }
+            },
+            "replicaReadsPerMinute": {
+              "type": "int",
+              "defaultValue": 480,
+              "metadata": {
+                "description": "Replica database reads per minute"
+              }
+            },
+            "engineInstances": {
+              "type": "int",
+              "defaultValue": 40,
+              "metadata": {
+                "description": "Number of engine instances for the load test"
+              }
+            },
+            "databaseName": {
+              "type": "string",
+              "defaultValue": "test",
+              "metadata": {
+                "description": "Database name in PostgreSQL server"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.LoadTestService/loadTests/tests",
+              "apiVersion": "2022-12-01",
+              "name": "[format('{0}/{1}', parameters('loadTestName'), parameters('testName'))]",
+              "properties": {
+                "description": "Load test for PostgreSQL primary and replica databases",
+                "displayName": "[parameters('testName')]",
+                "loadTestConfiguration": {
+                  "engineInstances": "[parameters('engineInstances')]",
+                  "splitAllCSVs": false,
+                  "quickStartTest": false
+                },
+                "environmentVariables": {
+                  "main_threads": "[format('{0}', parameters('mainThreads'))]",
+                  "main_loops": "[format('{0}', parameters('mainLoops'))]",
+                  "main_database": "[format('jdbc:postgresql://{0}:5432/{1}', parameters('primaryServerFqdn'), parameters('databaseName'))]",
+                  "replica_threads": "[format('{0}', parameters('replicaThreads'))]",
+                  "replica_loops": "[format('{0}', parameters('replicaLoops'))]",
+                  "replica_database": "[format('jdbc:postgresql://{0}:5432/{1}', parameters('replicaServerFqdn'), parameters('databaseName'))]",
+                  "main_writes_per_minute": "[format('{0}', parameters('mainWritesPerMinute'))]",
+                  "replica_reads_per_minute": "[format('{0}', parameters('replicaReadsPerMinute'))]"
+                },
+                "secrets": {
+                  "mainuser": {
+                    "type": "AKV_SECRET_URI",
+                    "value": "[format('{0}secrets/postgres-username', parameters('keyVaultUri'))]"
+                  },
+                  "mainpassword": {
+                    "type": "AKV_SECRET_URI",
+                    "value": "[format('{0}secrets/postgres-password', parameters('keyVaultUri'))]"
+                  },
+                  "replicauser": {
+                    "type": "AKV_SECRET_URI",
+                    "value": "[format('{0}secrets/postgres-username', parameters('keyVaultUri'))]"
+                  },
+                  "replicapassword": {
+                    "type": "AKV_SECRET_URI",
+                    "value": "[format('{0}secrets/postgres-password', parameters('keyVaultUri'))]"
+                  }
+                },
+                "secretsConfiguration": {
+                  "keyVaultId": "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]",
+                  "identityId": "[parameters('userAssignedIdentityId')]"
+                },
+                "testType": "JMX",
+                "passFailCriteria": {
+                  "passFailMetrics": {
+                    "totalRequests": {
+                      "aggregate": "avg",
+                      "clientMetric": "request_count",
+                      "condition": ">=",
+                      "value": 1
+                    },
+                    "averageResponseTime": {
+                      "aggregate": "avg",
+                      "clientMetric": "response_time_ms",
+                      "condition": "<=",
+                      "value": 5000
+                    },
+                    "requestsPerSec": {
+                      "aggregate": "avg",
+                      "clientMetric": "requests_per_sec",
+                      "condition": ">=",
+                      "value": 1
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Resources/deploymentScripts",
+              "apiVersion": "2020-10-01",
+              "name": "fileUploadReminder",
+              "location": "[parameters('location')]",
+              "kind": "AzureCLI",
+              "properties": {
+                "azCliVersion": "2.44.0",
+                "retentionInterval": "P1D",
+                "timeout": "PT5M",
+                "scriptContent": "      echo \"=== IMPORTANT: Manual action required for Load Test ===\"\n      echo \"After deployment, you need to manually upload the test files:\"\n      echo \"\"\n      echo \"1. Navigate to the Azure Portal → Azure Load Testing → $LOAD_TEST_NAME → Tests → $TEST_NAME\"\n      echo \"2. Click 'Edit' on the test\"\n      echo \"3. Upload the following files:\"\n      echo \"   - JMeter script: load_test_artifacts/jmeter_script.jmx\"\n      echo \"   - PostgreSQL JDBC driver: load_test_artifacts/postgresql-42.7.5.jar (in the 'Additional Files' section)\"\n      echo \"\"\n      echo \"Alternatively, you can use REST API to upload the files:\"\n      echo \"az rest --method PUT --uri ${environment().resourceManager}/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.LoadTestService/loadTests/$LOAD_TEST_NAME/tests/$TEST_NAME/files/{fileName}?api-version=2022-12-01 --body @{filePath}\"\n      echo \"\"\n      echo \"=== End of Manual Actions ===\"\n    ",
+                "environmentVariables": [
+                  {
+                    "name": "LOAD_TEST_NAME",
+                    "value": "[parameters('loadTestName')]"
+                  },
+                  {
+                    "name": "TEST_NAME",
+                    "value": "[parameters('testName')]"
+                  }
+                ]
+              }
+            }
+          ],
+          "outputs": {
+            "loadTestId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.LoadTestService/loadTests/tests', parameters('loadTestName'), parameters('testName'))]"
+            },
+            "loadTestName": {
+              "type": "string",
+              "value": "[parameters('loadTestName')]"
+            },
+            "testId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.LoadTestService/loadTests/tests', parameters('loadTestName'), parameters('testName'))]"
+            },
+            "testName": {
+              "type": "string",
+              "value": "[parameters('testName')]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'resourcesDeployment')]",
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('resourceGroupName'))]"
+      ]
     }
   ],
   "outputs": {
@@ -623,6 +975,14 @@
     "postgresReplicaServerFqdn": {
       "type": "string",
       "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'resourcesDeployment'), '2022-09-01').outputs.postgresReplicaServerFqdn.value]"
+    },
+    "loadTestConfigId": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'loadTestDeployment'), '2022-09-01').outputs.testId.value]"
+    },
+    "loadTestConfigName": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'loadTestDeployment'), '2022-09-01').outputs.testName.value]"
     }
   }
 }

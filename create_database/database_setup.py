@@ -8,8 +8,9 @@ It creates tables, loads sample data, and demonstrates basic database operations
 import json
 import os
 import sys
+import uuid
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, Type, TypeVar
 from dotenv import load_dotenv
 
 # SQLAlchemy imports
@@ -28,7 +29,6 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.dialects.postgresql import UUID
-import uuid
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 
@@ -53,6 +53,10 @@ DB_CONFIG = {
 # Define SQLAlchemy Base and Models
 Base = declarative_base()
 
+# Add type alias for mypy
+T = TypeVar('T', bound=Base)
+ModelType = Type[T]
+
 
 class Product(Base):
     __tablename__ = "products"
@@ -68,8 +72,10 @@ class Product(Base):
     orders = relationship("Order", back_populates="product")
 
     def __repr__(self) -> str:
-        return (f"<Product(id={self.id}, name='{self.name}', "
-                f"category='{self.category}', price={self.price})>")
+        return (
+            f"<Product(id={self.id}, name='{self.name}', "
+            f"category='{self.category}', price={self.price})>"
+        )
 
 
 class Order(Base):
@@ -115,14 +121,14 @@ def connect_to_database(config: Dict[str, Optional[str]]) -> Engine:
     """Connect to the Azure PostgreSQL database using SQLAlchemy."""
     try:
         # Make sure all required values are present
-        user = config.get('user')
-        password = config.get('password')
-        host = config.get('host')
-        database = config.get('database')
-        sslmode = config.get('sslmode', 'require')
+        user = config.get("user")
+        password = config.get("password")
+        host = config.get("host")
+        database = config.get("database")
+        sslmode = config.get("sslmode", "require")
         if not all([user, password, host, database]):
             raise ValueError("Missing required database connection parameters")
-        
+
         # Create the connection string
         connection_string = (
             f"postgresql+psycopg2://{user}:{password}@"
@@ -285,9 +291,7 @@ def query_data(engine: Engine) -> None:
                 .filter(Product.category == category)
                 .scalar()
             )
-            print(
-                f"Category: {category}, Count: {count}, Avg Price: ${avg_price:.2f}"
-            )
+            print(f"Category: {category}, Count: {count}, Avg Price: ${avg_price:.2f}")
 
         # Query 3: In-stock products
         print("\nIn-Stock Products:")

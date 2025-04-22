@@ -11,13 +11,16 @@ User credentials and JMeter script parameters are stored in the KeyVault.
 
 - `bicep/main.bicep`: Main template that creates a resource group and deploys all resources (subscription scope)
 - `bicep/resources.bicep`: Module that deploys all resources within the resource group
+- `bicep/load_test.bicep`: Module that configures the Azure Load Test for PostgreSQL testing
 - `bicep/parameters.json`: Parameters file for customizing deployments
+- `load_test_artifacts/`: Contains JMeter script and PostgreSQL JDBC driver for load testing
 
 ### Python Database Application
 
 The project includes a Python application in the `create_database` directory that helps create and populate the PostgreSQL database created by the Bicep deployment:
 
 - `create_database/database_setup.py`: Python script to initialize and populate the PostgreSQL database
+- `create_database/verify_replication.py`: Python script to verify replication between primary and replica databases
 - `create_database/streamlit_app.py`: Streamlit web application to view and edit data in the database
 - `create_database/data/sample_data.json`: Sample data for database initialization
 
@@ -142,6 +145,7 @@ The project includes three VS Code launch profiles:
 
 - Resource Group
 - Azure Load Test resource
+- Azure Load Test configuration with JMeter
 - User Assigned Managed Identity
 - Key Vault with the Managed Identity assigned as Key Vault Administrator
 - PostgreSQL Flexible Server (Memory Optimized, Standard_E2ds_v5)
@@ -152,6 +156,29 @@ The project includes three VS Code launch profiles:
 - PostgreSQL Flexible Server Replica
   - Read-only replica of the primary server
   - Created using 'Replica' create mode
+
+## Load Testing Configuration
+
+The deployment includes a JMeter-based load test configuration with:
+
+- Separate thread groups for primary write operations and replica read operations
+- Configurable thread counts, loops, and operations per minute
+- PostgreSQL JDBC driver for database connectivity
+- Reference to Key Vault secrets for database credentials
+- User Assigned Managed Identity for secure Key Vault access
+- Monitoring of PostgreSQL server metrics during test execution
+
+### Manual Steps for Load Testing
+
+After deploying the infrastructure:
+
+1. Navigate to the Azure Portal → Azure Load Testing → [Load Test Name] → Tests
+2. Click on the test configuration
+3. Click 'Edit' and manually upload the following files:
+   - JMeter script: `load_test_artifacts/jmeter_script.jmx`
+   - PostgreSQL JDBC driver: `load_test_artifacts/postgresql-42.7.5.jar` (in the 'Additional Files' section)
+4. Save the test configuration
+5. Run the test and monitor the performance of both primary and replica servers
 
 ## Manual Steps Required After Deployment
 
