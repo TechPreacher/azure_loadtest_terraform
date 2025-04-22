@@ -1,6 +1,6 @@
 # Azure Load Test Terraform Configuration
 
-This folder contains Terraform configuration to deploy the same infrastructure as the Bicep templates in the parent directory.
+This folder contains Terraform configuration to deploy Azure Load Test and PostgreSQL infrastructure.
 
 ## Resources Deployed
 
@@ -31,19 +31,19 @@ The project includes a Makefile in the parent directory with Terraform commands:
 
 ```bash
 # Initialize Terraform
-make tf-init
+make init
 
 # Validate Terraform configuration
-make tf-validate
+make validate
 
 # Preview changes
-make tf-plan SUBSCRIPTION_ID=your-subscription-id
+make plan SUBSCRIPTION_ID=your-subscription-id
 
 # Apply configuration
-make tf-apply SUBSCRIPTION_ID=your-subscription-id
+make apply SUBSCRIPTION_ID=your-subscription-id
 
 # Destroy infrastructure when done
-make tf-destroy SUBSCRIPTION_ID=your-subscription-id
+make destroy SUBSCRIPTION_ID=your-subscription-id
 ```
 
 ### Manual Deployment

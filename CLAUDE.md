@@ -4,21 +4,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-- Validate Bicep: `az bicep build --file main.bicep`
-- Lint Bicep: `az bicep lint --file main.bicep`
-- What-If Deployment: `az deployment group what-if --resource-group <group> --template-file main.bicep --parameters parameters.json`
-- Deploy: `az deployment group create --resource-group <group> --template-file main.bicep --parameters parameters.json`
+- Initialize Terraform: `cd terraform && terraform init`
+- Validate Terraform: `cd terraform && terraform validate`
+- Plan Deployment: `cd terraform && terraform plan -var="subscription_id=<subscription_id>"`
+- Apply Deployment: `cd terraform && terraform apply -var="subscription_id=<subscription_id>"`
+- Destroy Resources: `cd terraform && terraform destroy -var="subscription_id=<subscription_id>"`
 
 ## Code Style Guidelines
 
-### Bicep
+### Terraform
 
-- Use camelCase for parameter names and resource symbolic names
-- Use descriptive parameter and resource names
-- Include `@description` annotations for all parameters
-- Group related parameters together
-- Use default values for optional parameters
+- Use snake_case for resource names, variable names, and output names
+- Use descriptive names for resources and variables
+- Include description for all variables and outputs
+- Group related resources together
+- Use default values for optional variables
 - Add meaningful output values
+- Use consistent module structure
 
 ### JSON
 
@@ -28,6 +30,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### General
 
-- Always validate Bicep files before deployment
+- Always validate Terraform files before deployment
 - Document all major components in README.md
 - Keep resource declarations modular and reusable

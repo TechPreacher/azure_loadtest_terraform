@@ -1,7 +1,7 @@
-# Azure Load Test Bicep Project for Azure Database for PostgreSQL Flexible Server with Replica
+# Azure Load Test for Azure Database for PostgreSQL Flexible Server with Replica
 
-This project contains Bicep templates for deploying Azure Load Test resources and a Python application for database management.
-The template deploys an Azure Load Test resource, an Azure KeyVault, an Azure Database for PostgreSQL Flexible Server with a replica and a User Assigned Managed Identity to access KeyVault from the load test.
+This project uses Terraform to deploy Azure Load Test resources and includes a Python application for database management.
+The configuration deploys an Azure Load Test resource, an Azure KeyVault, an Azure Database for PostgreSQL Flexible Server with a replica, and a User Assigned Managed Identity to access KeyVault from the load test.
 The load test uses an Apache JMeter script to test the database.
 User credentials and JMeter script parameters are stored in the KeyVault.
 
@@ -9,25 +9,13 @@ User credentials and JMeter script parameters are stored in the KeyVault.
 
 ### Infrastructure as Code
 
-#### Bicep Infrastructure
-
-- `bicep/main.bicep`: Main template that creates a resource group and deploys all resources (subscription scope)
-- `bicep/resources.bicep`: Module that deploys all resources within the resource group
-- `bicep/load_test.bicep`: Module that configures the Azure Load Test for PostgreSQL testing
-- `bicep/parameters.json`: Parameters file for customizing deployments
-
-#### Terraform Infrastructure
-
-- `terraform/`: Contains equivalent Terraform configuration to deploy the same infrastructure
-- `terraform/README.md`: Instructions for using the Terraform configuration
-
-#### Common Resources
-
+- `terraform/`: Contains the Terraform configuration for deploying all infrastructure
+- `terraform/README.md`: Detailed instructions for the Terraform configuration
 - `load_test_artifacts/`: Contains JMeter script and PostgreSQL JDBC driver for load testing
 
 ### Python Database Application
 
-The project includes a Python application in the `create_database` directory that helps create and populate the PostgreSQL database created by the Bicep deployment:
+The project includes a Python application in the `create_database` directory that helps create and populate the PostgreSQL database:
 
 - `create_database/database_setup.py`: Python script to initialize and populate the PostgreSQL database
 - `create_database/verify_replication.py`: Python script to verify replication between primary and replica databases
@@ -36,13 +24,9 @@ The project includes a Python application in the `create_database` directory tha
 
 ## Deployment
 
-You can choose to deploy the infrastructure using either Bicep or Terraform.
+### Using the Makefile
 
-### Option 1: Using Bicep
-
-#### Using the Makefile
-
-The project includes a Makefile to simplify the Bicep deployment process:
+The project includes a Makefile to simplify the Terraform deployment process:
 
 ```bash
 # Show available commands
@@ -54,63 +38,25 @@ make login
 # Set the subscription
 make set-subscription SUBSCRIPTION_ID=your-subscription-id
 
-# Validate the Bicep template
-make validate
-
-# Lint the Bicep template
-make lint
-
-# Perform a what-if analysis (preview changes)
-make what-if SUBSCRIPTION_ID=your-subscription-id
-
-# Deploy the template
-make deploy SUBSCRIPTION_ID=your-subscription-id
-```
-
-#### Manual Bicep Deployment
-
-To deploy Bicep manually:
-
-```bash
-# Login to Azure
-az login
-
-# Set subscription
-az account set --subscription <subscription-id>
-
-# Deploy the Bicep template at subscription scope
-az deployment sub create \
-  --location northeurope \
-  --template-file bicep/main.bicep \
-  --parameters bicep/parameters.json
-```
-
-### Option 2: Using Terraform
-
-See the [Terraform README](terraform/README.md) for detailed instructions on deploying with Terraform.
-
-#### Using the Makefile for Terraform
-
-The project includes Terraform commands in the Makefile:
-
-```bash
 # Initialize Terraform
-make tf-init
+make init
 
 # Validate Terraform configuration
-make tf-validate
+make validate
 
 # Preview changes
-make tf-plan SUBSCRIPTION_ID=your-subscription-id
+make plan SUBSCRIPTION_ID=your-subscription-id
 
 # Apply configuration
-make tf-apply SUBSCRIPTION_ID=your-subscription-id
+make apply SUBSCRIPTION_ID=your-subscription-id
 
 # Destroy infrastructure when done
-make tf-destroy SUBSCRIPTION_ID=your-subscription-id
+make destroy SUBSCRIPTION_ID=your-subscription-id
 ```
 
-#### Manual Terraform Commands
+### Manual Terraform Commands
+
+If you prefer not to use the Makefile, you can run the Terraform commands directly:
 
 ```bash
 # Initialize Terraform
@@ -121,13 +67,13 @@ terraform init
 terraform validate
 
 # Review deployment plan
-terraform plan
+terraform plan -var="subscription_id=your-subscription-id"
 
 # Apply the configuration
-terraform apply
+terraform apply -var="subscription_id=your-subscription-id"
 
 # Destroy resources when done
-terraform destroy
+terraform destroy -var="subscription_id=your-subscription-id"
 ```
 
 ## Python Application Setup
@@ -241,25 +187,4 @@ After deploying the infrastructure:
 
 ## Post-Deployment Steps
 
-### When Using Bicep
-
-With Bicep deployment, you need to manually add a Microsoft Entra administrator to the primary PostgreSQL server. The replica server will inherit the AD admin configuration automatically. The deployment script will output instructions, but the general command is:
-
-```bash
-az postgres flexible-server ad-admin create \
-  --server-name <postgres-server-name> \
-  --resource-group <resource-group-name> \
-  --object-id <your-aad-object-id> \
-  --principal-type User \
-  --display-name <your-aad-display-name>
-```
-
-You can get your AAD object ID by running:
-
-```bash
-az ad signed-in-user show --query id -o tsv
-```
-
-### When Using Terraform
-
-With Terraform deployment, the User Assigned Managed Identity is automatically configured as a Microsoft Entra administrator for the PostgreSQL server.
+The Terraform deployment automatically configures the User Assigned Managed Identity as a Microsoft Entra administrator for the PostgreSQL server. No manual steps are required for the Entra admin configuration.
