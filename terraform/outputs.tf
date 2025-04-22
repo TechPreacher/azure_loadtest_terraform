@@ -54,14 +54,11 @@ output "postgres_replica_server_fqdn" {
   value = azurerm_postgresql_flexible_server.replica.fqdn
 }
 
-output "load_test_config_id" {
-  value = azurerm_load_test_url.test.id
-}
-
 output "load_test_config_name" {
-  value = azurerm_load_test_url.test.name
+  value = var.load_test_test_name
+  description = "The name for the load test configuration (to be created manually)"
 }
 
 output "manual_action_required" {
-  value = "After deployment, manually add AAD admin to PostgreSQL servers and upload test files. See manual steps reminder output for instructions."
+  value = "After deployment, upload test files. The User Assigned Managed Identity is automatically configured as a Microsoft Entra administrator. See manual steps reminder output for instructions."
 }

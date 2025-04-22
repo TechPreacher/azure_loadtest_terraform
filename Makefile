@@ -80,7 +80,7 @@ tf-plan: ## Preview Terraform changes
 	fi
 	@if [ -d "$(TF_DIR)" ]; then \
 		az account set --subscription $(SUBSCRIPTION_ID) && \
-		cd $(TF_DIR) && terraform plan; \
+		cd $(TF_DIR) && terraform plan -var="subscription_id=$(SUBSCRIPTION_ID)"; \
 	else \
 		echo "Error: Terraform directory '$(TF_DIR)' not found"; \
 		exit 1; \
@@ -93,7 +93,7 @@ tf-apply: ## Apply Terraform configuration
 	fi
 	@if [ -d "$(TF_DIR)" ]; then \
 		az account set --subscription $(SUBSCRIPTION_ID) && \
-		cd $(TF_DIR) && terraform apply; \
+		cd $(TF_DIR) && terraform apply -var="subscription_id=$(SUBSCRIPTION_ID)"; \
 	else \
 		echo "Error: Terraform directory '$(TF_DIR)' not found"; \
 		exit 1; \
@@ -106,7 +106,7 @@ tf-destroy: ## Destroy Terraform-managed infrastructure
 	fi
 	@if [ -d "$(TF_DIR)" ]; then \
 		az account set --subscription $(SUBSCRIPTION_ID) && \
-		cd $(TF_DIR) && terraform destroy; \
+		cd $(TF_DIR) && terraform destroy -var="subscription_id=$(SUBSCRIPTION_ID)"; \
 	else \
 		echo "Error: Terraform directory '$(TF_DIR)' not found"; \
 		exit 1; \

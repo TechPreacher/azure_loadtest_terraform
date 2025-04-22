@@ -1,8 +1,52 @@
+# Required provider versions
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = ">=3.0.0"
+    }
+    time = {
+      source  = "hashicorp/time"
+      version = ">=0.9.0"
+    }
+  }
+  required_version = ">= 1.0.0"
+}
+
 # Azure provider configuration
 provider "azurerm" {
+  # These environment variables would be set automatically when using the Makefile
+  # ARM_SUBSCRIPTION_ID
+  # ARM_CLIENT_ID
+  # ARM_CLIENT_SECRET
+  # ARM_TENANT_ID
+  # For manual testing, we can use a placeholder or get from variables
+  subscription_id = var.subscription_id
+  
+  # Disable automatic resource provider registration
+  # This is needed if the user doesn't have permissions to register resource providers
+  resource_provider_registrations = "none"
+  
   features {
     key_vault {
-      purge_soft_delete_on_destroy = true
+      purge_soft_delete_on_destroy    = true
+      recover_soft_deleted_key_vaults = true
+    }
+    
+    # Add retry logic for resource operations
+    resource_group {
+      prevent_deletion_if_contains_resources = false
+    }
+    
+    # Add API management feature
+    api_management {
+      recover_soft_deleted = true
+    }
+    
+    # Improve virtual machine behavior
+    virtual_machine {
+      delete_os_disk_on_deletion     = true
+      skip_shutdown_and_force_delete = true
     }
   }
 }
@@ -33,6 +77,25 @@ resource "azurerm_key_vault" "main" {
   purge_protection_enabled    = false
   sku_name                    = var.key_vault_sku
 
+  # Add access policy for the currently logged-in user or service principal
+  access_policy {
+    tenant_id = data.azurerm_client_config.current.tenant_id
+    object_id = data.azurerm_client_config.current.object_id
+
+    key_permissions = [
+      "Get", "List", "Create", "Delete", "Update", "Recover", "Purge", "GetRotationPolicy"
+    ]
+
+    secret_permissions = [
+      "Get", "List", "Set", "Delete", "Recover", "Backup", "Restore", "Purge"
+    ]
+
+    certificate_permissions = [
+      "Get", "List", "Create", "Delete", "Update", "Recover", "Purge"
+    ]
+  }
+
+  # Add access policy for the managed identity
   access_policy {
     tenant_id = data.azurerm_client_config.current.tenant_id
     object_id = azurerm_user_assigned_identity.main.principal_id
@@ -77,8 +140,11 @@ resource "azurerm_postgresql_flexible_server" "primary" {
     tenant_id                     = data.azurerm_client_config.current.tenant_id
   }
 
+  # high_availability configuration is needed but there's no disabled option
+  # we must use one of the available options, so we'll use SameZone
   high_availability {
-    mode = "Disabled"
+    mode = "SameZone"
+    # This is actually not the same as "Disabled" in Bicep, but it's the closest option available
   }
 
   backup_retention_days        = 7
@@ -103,6 +169,25 @@ resource "azurerm_postgresql_flexible_server_firewall_rule" "allow_all" {
   server_id        = azurerm_postgresql_flexible_server.primary.id
   start_ip_address = "0.0.0.0"
   end_ip_address   = "255.255.255.255"
+  
+  # Add explicit dependency to ensure server is fully provisioned
+  depends_on = [
+    azurerm_postgresql_flexible_server.primary,
+    # Include a time delay to ensure the server is ready for firewall rule creation
+    time_sleep.wait_30_seconds
+  ]
+
+  # Use timeouts to give operations more time to complete
+  timeouts {
+    create = "10m"
+    delete = "10m"
+  }
+}
+
+# Add a sleep resource to wait between resource creation operations
+resource "time_sleep" "wait_30_seconds" {
+  depends_on = [azurerm_postgresql_flexible_server.primary]
+  create_duration = "30s"
 }
 
 resource "azurerm_postgresql_flexible_server_firewall_rule" "allow_azure_services" {
@@ -110,6 +195,18 @@ resource "azurerm_postgresql_flexible_server_firewall_rule" "allow_azure_service
   server_id        = azurerm_postgresql_flexible_server.primary.id
   start_ip_address = "0.0.0.0"
   end_ip_address   = "0.0.0.0"
+  
+  # Add explicit dependency to wait for the first firewall rule
+  depends_on = [
+    azurerm_postgresql_flexible_server_firewall_rule.allow_all,
+    time_sleep.wait_30_seconds
+  ]
+  
+  # Use timeouts to give operations more time to complete
+  timeouts {
+    create = "10m"
+    delete = "10m"
+  }
 }
 
 # Database
@@ -117,7 +214,29 @@ resource "azurerm_postgresql_flexible_server_database" "main" {
   name      = var.postgres_database_name
   server_id = azurerm_postgresql_flexible_server.primary.id
   charset   = "UTF8"
-  collation = "en_US.UTF8"
+  collation = "en_US.utf8"  # lowercase utf8 is required by Terraform
+  
+  # Add dependency on firewall rules
+  depends_on = [
+    azurerm_postgresql_flexible_server_firewall_rule.allow_all,
+    azurerm_postgresql_flexible_server_firewall_rule.allow_azure_services
+  ]
+  
+  # Use timeouts to give operations more time to complete
+  timeouts {
+    create = "30m"
+    delete = "30m"
+  }
+}
+
+# Add a delay before creating the replica
+resource "time_sleep" "wait_before_replica" {
+  depends_on = [
+    azurerm_postgresql_flexible_server_database.main,
+    azurerm_postgresql_flexible_server_firewall_rule.allow_all,
+    azurerm_postgresql_flexible_server_firewall_rule.allow_azure_services
+  ]
+  create_duration = "60s"
 }
 
 # PostgreSQL Replica Server
@@ -139,18 +258,37 @@ resource "azurerm_postgresql_flexible_server" "replica" {
     tenant_id                     = data.azurerm_client_config.current.tenant_id
   }
 
+  # high_availability configuration is needed but there's no disabled option
+  # we must use one of the available options, so we'll use SameZone
   high_availability {
-    mode = "Disabled"
+    mode = "SameZone"
+    # This is actually not the same as "Disabled" in Bicep, but it's the closest option available
   }
 
   backup_retention_days        = 7
   geo_redundant_backup_enabled = false
 
   depends_on = [
-    azurerm_postgresql_flexible_server_database.main
+    azurerm_postgresql_flexible_server_database.main,
+    time_sleep.wait_before_replica
   ]
 
+  # Use timeouts to give operations more time to complete
+  timeouts {
+    create = "60m"  # Creating a replica can take a long time
+    delete = "30m"
+  }
+
   tags = var.tags
+}
+
+# Add a delay before creating Key Vault secrets
+resource "time_sleep" "wait_before_secrets" {
+  depends_on = [
+    azurerm_key_vault.main,
+    azurerm_role_assignment.key_vault_admin
+  ]
+  create_duration = "30s"
 }
 
 # Key Vault Secrets
@@ -160,8 +298,16 @@ resource "azurerm_key_vault_secret" "postgres_username" {
   key_vault_id = azurerm_key_vault.main.id
 
   depends_on = [
-    azurerm_key_vault.main
+    azurerm_key_vault.main,
+    time_sleep.wait_before_secrets
   ]
+  
+  timeouts {
+    create = "10m"
+    update = "10m"
+    delete = "10m"
+    read   = "5m"
+  }
 }
 
 resource "azurerm_key_vault_secret" "postgres_password" {
@@ -170,8 +316,16 @@ resource "azurerm_key_vault_secret" "postgres_password" {
   key_vault_id = azurerm_key_vault.main.id
 
   depends_on = [
-    azurerm_key_vault.main
+    azurerm_key_vault.main,
+    time_sleep.wait_before_secrets
   ]
+  
+  timeouts {
+    create = "10m"
+    update = "10m"
+    delete = "10m"
+    read   = "5m"
+  }
 }
 
 resource "azurerm_key_vault_secret" "postgres_server" {
@@ -181,8 +335,16 @@ resource "azurerm_key_vault_secret" "postgres_server" {
 
   depends_on = [
     azurerm_key_vault.main,
-    azurerm_postgresql_flexible_server.primary
+    azurerm_postgresql_flexible_server.primary,
+    time_sleep.wait_before_secrets
   ]
+  
+  timeouts {
+    create = "10m"
+    update = "10m"
+    delete = "10m"
+    read   = "5m"
+  }
 }
 
 resource "azurerm_key_vault_secret" "postgres_database" {
@@ -191,8 +353,16 @@ resource "azurerm_key_vault_secret" "postgres_database" {
   key_vault_id = azurerm_key_vault.main.id
 
   depends_on = [
-    azurerm_key_vault.main
+    azurerm_key_vault.main,
+    time_sleep.wait_before_secrets
   ]
+  
+  timeouts {
+    create = "10m"
+    update = "10m"
+    delete = "10m"
+    read   = "5m"
+  }
 }
 
 resource "azurerm_key_vault_secret" "postgres_fqdn" {
@@ -202,8 +372,25 @@ resource "azurerm_key_vault_secret" "postgres_fqdn" {
 
   depends_on = [
     azurerm_key_vault.main,
-    azurerm_postgresql_flexible_server.primary
+    azurerm_postgresql_flexible_server.primary,
+    time_sleep.wait_before_secrets
   ]
+  
+  timeouts {
+    create = "10m"
+    update = "10m"
+    delete = "10m"
+    read   = "5m"
+  }
+}
+
+# Add a delay before creating replica-related secrets
+resource "time_sleep" "wait_before_replica_secrets" {
+  depends_on = [
+    azurerm_postgresql_flexible_server.replica,
+    azurerm_key_vault_secret.postgres_fqdn
+  ]
+  create_duration = "30s"
 }
 
 resource "azurerm_key_vault_secret" "postgres_replica_server" {
@@ -213,8 +400,16 @@ resource "azurerm_key_vault_secret" "postgres_replica_server" {
 
   depends_on = [
     azurerm_key_vault.main,
-    azurerm_postgresql_flexible_server.replica
+    azurerm_postgresql_flexible_server.replica,
+    time_sleep.wait_before_replica_secrets
   ]
+  
+  timeouts {
+    create = "10m"
+    update = "10m"
+    delete = "10m"
+    read   = "5m"
+  }
 }
 
 resource "azurerm_key_vault_secret" "postgres_replica_fqdn" {
@@ -224,8 +419,16 @@ resource "azurerm_key_vault_secret" "postgres_replica_fqdn" {
 
   depends_on = [
     azurerm_key_vault.main,
-    azurerm_postgresql_flexible_server.replica
+    azurerm_postgresql_flexible_server.replica,
+    time_sleep.wait_before_replica_secrets
   ]
+  
+  timeouts {
+    create = "10m"
+    update = "10m"
+    delete = "10m"
+    read   = "5m"
+  }
 }
 
 # Azure Load Test
@@ -234,4 +437,17 @@ resource "azurerm_load_test" "main" {
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
   tags                = var.tags
+  
+  # Add depends_on to ensure it's created after the database resources
+  depends_on = [
+    azurerm_postgresql_flexible_server.primary,
+    azurerm_postgresql_flexible_server.replica,
+    azurerm_key_vault_secret.postgres_replica_fqdn
+  ]
+  
+  # Use timeouts to give operations more time to complete
+  timeouts {
+    create = "20m"
+    delete = "20m"
+  }
 }

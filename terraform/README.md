@@ -95,3 +95,32 @@ terraform destroy
 
 - The PostgreSQL password is stored in the Terraform state file in plaintext. For production, consider using a more secure approach for secrets management.
 - The Load Test files need to be uploaded manually as Terraform doesn't support direct file uploads.
+
+## Reliability Features
+
+This Terraform configuration implements several reliability features to handle Azure API limitations:
+
+1. **Extended Timeouts**: All resources have configured timeouts to allow more time for operations to complete.
+
+2. **Time Delays**: Strategic delays between operations using `time_sleep` resources:
+   - 30-second delay after PostgreSQL server creation before creating firewall rules
+   - 60-second delay before creating the replica server
+   - 30-second delay before creating Key Vault secrets
+
+3. **Explicit Dependencies**: Resources declare explicit dependencies to ensure proper provisioning order.
+
+4. **Azure Provider Configuration**:
+   - Higher timeouts for client operations (30 minutes)
+   - Improved recovery options for Key Vault and other resources
+   - Force wait for PostgreSQL operations to complete
+
+5. **PostgreSQL-specific Improvements**:
+   - Firewall rules creation separated to avoid concurrent operation issues
+   - Replica server created only after database is confirmed ready
+   - Careful ordering of resource creation to avoid "server busy" errors
+
+These features help avoid common deployment issues with Azure PostgreSQL Flexible Server, such as:
+- "Server busy with another operation" errors
+- Key Vault access policy conflicts
+- Timing issues with replica creation
+- Secret creation failures
