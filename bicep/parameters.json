@@ -21,7 +21,7 @@
       "value": "pgadmin"
     },
     "postgresAdminPassword": {
-      "value": "P@ssw0rd1234!"
+      "value": "TopSecret123!"
     },
     "postgresDatabaseName": {
       "value": "test"

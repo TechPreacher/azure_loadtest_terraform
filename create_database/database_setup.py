@@ -1,14 +1,13 @@
 """
 Azure PostgreSQL Python Application
 
-This script initializes and populates Azure Database for PostgreSQL instances.
+This script initializes and populates an Azure Database for PostgreSQL instance.
 It creates tables, loads sample data, and demonstrates basic database operations.
 """
 
 import json
 import os
 import sys
-from enum import Enum
 from pathlib import Path
 from typing import Dict, Optional
 from dotenv import load_dotenv
@@ -34,36 +33,21 @@ from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 
 
-class DatabaseType(str, Enum):
-    """Enum for database types"""
-
-    PRIMARY = "PRIMARY"
-    REPLICA = "REPLICA"
-    BOTH = "BOTH"
-
-
 # Load environment variables from .env file if it exists
-env_path = Path(__file__).parent / ".env"
-if env_path.exists():
-    load_dotenv(env_path)
+env_path = Path(__file__).parent
+env_file = env_path / ".env"
+if env_file.exists():
+    load_dotenv(env_file)
 else:
     print("Warning: .env file not found. Using environment variables.")
 
-# Define config values for both database types
-PRIMARY_DB_CONFIG = {
+# Define database configuration
+DB_CONFIG = {
     "host": os.environ.get("AZURE_POSTGRES_PRIMARY_HOST"),
     "user": os.environ.get("AZURE_POSTGRES_PRIMARY_USER"),
     "password": os.environ.get("AZURE_POSTGRES_PRIMARY_PASSWORD"),
     "database": os.environ.get("AZURE_POSTGRES_PRIMARY_DB"),
-    "sslmode": os.environ.get("AZURE_POSTGRES_SSL_MODE", "require"),
-}
-
-REPLICA_DB_CONFIG = {
-    "host": os.environ.get("AZURE_POSTGRES_REPLICA_HOST"),
-    "user": os.environ.get("AZURE_POSTGRES_REPLICA_USER"),
-    "password": os.environ.get("AZURE_POSTGRES_REPLICA_PASSWORD"),
-    "database": os.environ.get("AZURE_POSTGRES_REPLICA_DB"),
-    "sslmode": os.environ.get("AZURE_POSTGRES_SSL_MODE", "require"),
+    "sslmode": os.environ.get("AZURE_POSTGRES_PRIMARY_SSL_MODE", "require"),
 }
 
 # Define SQLAlchemy Base and Models
@@ -100,57 +84,34 @@ class Order(Base):
     product = relationship("Product", back_populates="orders")
 
     def __repr__(self) -> str:
-        return f"<Order(id={self.id}, product_id={self.product_id}, \
-quantity={self.quantity})>"
+        return f"<Order(id={self.id}, product_id={self.product_id}, quantity={self.quantity})>"
 
 
-def check_env_vars(db_type: DatabaseType) -> bool:
+def check_env_vars() -> bool:
     """Verify all required environment variables are set."""
-    # Basic connection variables - different vars needed based on db_type
-    if db_type in (DatabaseType.PRIMARY, DatabaseType.BOTH):
-        primary_vars = [
-            "AZURE_POSTGRES_PRIMARY_HOST",
-            "AZURE_POSTGRES_PRIMARY_USER",
-            "AZURE_POSTGRES_PRIMARY_PASSWORD",
-            "AZURE_POSTGRES_PRIMARY_DB",
-        ]
+    required_vars = [
+        "AZURE_POSTGRES_PRIMARY_HOST",
+        "AZURE_POSTGRES_PRIMARY_USER",
+        "AZURE_POSTGRES_PRIMARY_PASSWORD",
+        "AZURE_POSTGRES_PRIMARY_DB",
+    ]
 
-        primary_missing = [var for var in primary_vars if not os.environ.get(var)]
-        if primary_missing:
-            print(
-                f"Error: Missing PRIMARY database environment variables: "
-                f"{', '.join(primary_missing)}"
-            )
-            print(
-                "Please create a .env file based on .env.example "
-                "with your Azure PostgreSQL credentials."
-            )
-            sys.exit(1)
-
-    if db_type in (DatabaseType.REPLICA, DatabaseType.BOTH):
-        replica_vars = [
-            "AZURE_POSTGRES_REPLICA_HOST",
-            "AZURE_POSTGRES_REPLICA_USER",
-            "AZURE_POSTGRES_REPLICA_PASSWORD",
-            "AZURE_POSTGRES_REPLICA_DB",
-        ]
-
-        replica_missing = [var for var in replica_vars if not os.environ.get(var)]
-        if replica_missing:
-            print(
-                f"Error: Missing REPLICA database environment variables: "
-                f"{', '.join(replica_missing)}"
-            )
-            print(
-                "Please create a .env file based on .env.example "
-                "with your Azure PostgreSQL credentials."
-            )
-            sys.exit(1)
+    missing_vars = [var for var in required_vars if not os.environ.get(var)]
+    if missing_vars:
+        print(
+            f"Error: Missing database environment variables: "
+            f"{', '.join(missing_vars)}"
+        )
+        print(
+            "Please create a .env file based on .env.example "
+            "with your Azure PostgreSQL credentials."
+        )
+        sys.exit(1)
 
     return True
 
 
-def connect_to_database(config: Dict[str, Optional[str]], db_type_desc: str) -> Engine:
+def connect_to_database(config: Dict[str, Optional[str]]) -> Engine:
     """Connect to the Azure PostgreSQL database using SQLAlchemy."""
     try:
         # Make sure all required values are present
@@ -161,13 +122,14 @@ def connect_to_database(config: Dict[str, Optional[str]], db_type_desc: str) -> 
         sslmode = config.get('sslmode', 'require')
         if not all([user, password, host, database]):
             raise ValueError("Missing required database connection parameters")
+        
         # Create the connection string
         connection_string = (
             f"postgresql+psycopg2://{user}:{password}@"
             f"{host}/{database}?sslmode={sslmode}"
         )
 
-        print(f"Connecting to {db_type_desc} database at {config['host']}...")
+        print(f"Connecting to database at {host}...")
 
         # Create engine with echo=False to avoid logging SQL statements
         engine = create_engine(connection_string, echo=False)
@@ -176,10 +138,10 @@ def connect_to_database(config: Dict[str, Optional[str]], db_type_desc: str) -> 
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
 
-        print(f"Connected successfully to {db_type_desc} database!")
+        print("Connected successfully to database!")
         return engine
     except Exception as e:
-        print(f"Error connecting to {db_type_desc} PostgreSQL: {e}")
+        print(f"Error connecting to PostgreSQL: {e}")
         sys.exit(1)
 
 
@@ -236,7 +198,7 @@ def create_tables(engine: Engine) -> None:
         sys.exit(1)
 
 
-def load_sample_data(engine: Engine, is_primary: bool) -> None:
+def load_sample_data(engine: Engine) -> None:
     """Load sample data from JSON file into the database using SQLAlchemy."""
     try:
         # Create a session to interact with the database
@@ -250,15 +212,6 @@ def load_sample_data(engine: Engine, is_primary: bool) -> None:
             print(
                 f"Products table already contains {product_count} records. "
                 "Skipping data import."
-            )
-            session.close()
-            return
-
-        # Only insert sample data for the primary database
-        if not is_primary:
-            print(
-                "Skipping data import for replica database - "
-                "data will come from replication"
             )
             session.close()
             return
@@ -317,37 +270,31 @@ def query_data(engine: Engine) -> None:
                 f"In Stock: {product.in_stock}"
             )
 
-        try:
-            # Query 2: Group by category
-            print("\nProducts by Category:")
-            # Use a simpler query to avoid potential database function differences
-            categories = session.query(Product.category).distinct().all()
-            for (category,) in categories:
-                count = (
-                    session.query(func.count(Product.id))
-                    .filter(Product.category == category)
-                    .scalar()
-                )
-                avg_price = (
-                    session.query(func.avg(Product.price))
-                    .filter(Product.category == category)
-                    .scalar()
-                )
-                print(
-                    f"Category: {category}, Count: {count}, Avg Price: ${avg_price:.2f}"
-                )
-
-            # Query 3: In-stock products
-            print("\nIn-Stock Products:")
-            in_stock_count = (
-                session.query(Product).filter(Product.in_stock.is_(True)).count()
+        # Query 2: Group by category
+        print("\nProducts by Category:")
+        # Use a simpler query to avoid potential database function differences
+        categories = session.query(Product.category).distinct().all()
+        for (category,) in categories:
+            count = (
+                session.query(func.count(Product.id))
+                .filter(Product.category == category)
+                .scalar()
             )
-            print(f"Total in-stock products: {in_stock_count}")
-        except Exception as e:
-            print(f"Warning: Some advanced queries failed: {e}")
+            avg_price = (
+                session.query(func.avg(Product.price))
+                .filter(Product.category == category)
+                .scalar()
+            )
             print(
-                "This is expected for the replica database until replication is set up."
+                f"Category: {category}, Count: {count}, Avg Price: ${avg_price:.2f}"
             )
+
+        # Query 3: In-stock products
+        print("\nIn-Stock Products:")
+        in_stock_count = (
+            session.query(Product).filter(Product.in_stock.is_(True)).count()
+        )
+        print(f"Total in-stock products: {in_stock_count}")
 
         session.close()
     except Exception as e:
@@ -355,94 +302,27 @@ def query_data(engine: Engine) -> None:
         sys.exit(1)
 
 
-def setup_primary_database() -> None:
-    """Set up the primary database with schema and sample data."""
-    print(f"\nSetting up {DatabaseType.PRIMARY} database...")
+def main() -> None:
+    """Main function to run the application."""
+    print("Azure PostgreSQL Database Setup")
+    print("===============================")
+
+    # Check environment variables
+    check_env_vars()
 
     # Connect to PostgreSQL with SQLAlchemy
-    engine = connect_to_database(PRIMARY_DB_CONFIG, DatabaseType.PRIMARY)
+    engine = connect_to_database(DB_CONFIG)
 
     # Create database schema
     create_tables(engine)
 
     # Load sample data
-    load_sample_data(engine, is_primary=True)
+    load_sample_data(engine)
 
     # Query and display data
     query_data(engine)
 
-    print(f"{DatabaseType.PRIMARY} database setup completed successfully!")
-
-
-def setup_replica_database() -> None:
-    """Set up the replica database with schema only (no data)."""
-    print(f"\nSetting up {DatabaseType.REPLICA} database...")
-
-    # Connect to PostgreSQL with SQLAlchemy
-    engine = connect_to_database(REPLICA_DB_CONFIG, DatabaseType.REPLICA)
-
-    # Create database schema
-    create_tables(engine)
-
-    # Don't load sample data - will come from replication
-    load_sample_data(engine, is_primary=False)
-
-    print(f"{DatabaseType.REPLICA} database setup completed successfully!")
-
-
-def main() -> None:
-    """Main function to run the application."""
-    print("Azure PostgreSQL Python Application")
-    print("===================================")
-
-    # Determine which database(s) to set up
-    db_type_str = os.environ.get("DB_TYPE")
-    db_type = None
-
-    if db_type_str:
-        try:
-            db_type = DatabaseType(db_type_str)
-        except ValueError:
-            print(f"Invalid DB_TYPE: {db_type_str}")
-            print(f"Valid values are: {', '.join([t.value for t in DatabaseType])}")
-            sys.exit(1)
-    else:
-        print("\nWhich database(s) would you like to set up?")
-        print(f"1. {DatabaseType.PRIMARY.value.lower()} database only")
-        print(f"2. {DatabaseType.REPLICA.value.lower()} database only")
-        print(f"3. {DatabaseType.BOTH.value.lower()} databases")
-
-        choice = ""
-        while choice not in ["1", "2", "3"]:
-            choice = input("\nEnter your choice (1, 2, or 3): ").strip()
-
-        if choice == "1":
-            db_type = DatabaseType.PRIMARY
-        elif choice == "2":
-            db_type = DatabaseType.REPLICA
-        else:
-            db_type = DatabaseType.BOTH
-
-    print(f"\nSetting up {db_type} database(s)...")
-
-    # Check environment variables
-    check_env_vars(db_type)
-
-    # Set up the requested database(s)
-    if db_type in (DatabaseType.PRIMARY, DatabaseType.BOTH):
-        setup_primary_database()
-
-    if db_type in (DatabaseType.REPLICA, DatabaseType.BOTH):
-        setup_replica_database()
-
-    if db_type == DatabaseType.BOTH:
-        print("\nBoth databases have been successfully set up.")
-        print(
-            "You can now run 'python replication_setup.py' to configure "
-            "replication between them."
-        )
-
-    print("\nApplication completed successfully!")
+    print("\nDatabase setup completed successfully!")
 
 
 if __name__ == "__main__":

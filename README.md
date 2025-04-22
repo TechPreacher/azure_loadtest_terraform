@@ -1,15 +1,25 @@
 # Azure Load Test Bicep Project for Azure Database for PostgreSQL Flexible Server with Replica
 
-This project contains Bicep templates for deploying Azure Load Test resources.
-This template deploys an Azure Load Test resource, an Azure KeyVault, an Azure Database for PostgreSQL Flexible Server with a replica and a User Assigned Managed Identity to access KeyVault from the load test.
+This project contains Bicep templates for deploying Azure Load Test resources and a Python application for database management.
+The template deploys an Azure Load Test resource, an Azure KeyVault, an Azure Database for PostgreSQL Flexible Server with a replica and a User Assigned Managed Identity to access KeyVault from the load test.
 The load test uses an Apache JMeter script to test the database.
 User credentials and JMeter script parameters are stored in the KeyVault.
 
-## Files
+## Project Structure
 
-- `main.bicep`: Main template that creates a resource group and deploys all resources (subscription scope)
-- `resources.bicep`: Module that deploys all resources within the resource group
-- `parameters.json`: Parameters file for customizing deployments
+### Bicep Infrastructure
+
+- `bicep/main.bicep`: Main template that creates a resource group and deploys all resources (subscription scope)
+- `bicep/resources.bicep`: Module that deploys all resources within the resource group
+- `bicep/parameters.json`: Parameters file for customizing deployments
+
+### Python Database Application
+
+The project includes a Python application in the `create_database` directory that helps create and populate the PostgreSQL database created by the Bicep deployment:
+
+- `create_database/database_setup.py`: Python script to initialize and populate the PostgreSQL database
+- `create_database/streamlit_app.py`: Streamlit web application to view and edit data in the database
+- `create_database/data/sample_data.json`: Sample data for database initialization
 
 ## Deployment
 
@@ -54,9 +64,79 @@ az account set --subscription <subscription-id>
 # Deploy the Bicep template at subscription scope
 az deployment sub create \
   --location northeurope \
-  --template-file main.bicep \
-  --parameters parameters.json
+  --template-file bicep/main.bicep \
+  --parameters bicep/parameters.json
 ```
+
+## Python Application Setup
+
+The Python application is built using Poetry for dependency management.
+
+### Setup the Python Environment
+
+```bash
+# Install dependencies using Poetry
+poetry install
+
+# Activate the virtual environment
+poetry shell
+```
+
+### Configure Database Connection
+
+Create a `.env` file in the `create_database` directory with your PostgreSQL connection details:
+
+```
+# Azure Subscription Settings
+AZURE_SUBSCRIPTION_ID=your-subscription-id
+AZURE_RESOURCE_GROUP=your-resource-group
+
+# Primary PostgreSQL server connection details
+AZURE_POSTGRES_PRIMARY_HOST=your-server.postgres.database.azure.com
+AZURE_POSTGRES_PRIMARY_USER=your-username@your-server
+AZURE_POSTGRES_PRIMARY_PASSWORD=your-password
+AZURE_POSTGRES_PRIMARY_DB=test
+
+# Replica PostgreSQL server connection details (for verify_replication.py)
+AZURE_POSTGRES_REPLICA_HOST=your-replica-server.postgres.database.azure.com
+AZURE_POSTGRES_REPLICA_USER=your-username@your-replica-server
+AZURE_POSTGRES_REPLICA_PASSWORD=your-password
+AZURE_POSTGRES_REPLICA_DB=test
+
+# SSL mode for all connections
+AZURE_POSTGRES_SSL_MODE=require
+
+# For the Streamlit app
+AZURE_POSTGRES_HOST=your-server.postgres.database.azure.com
+AZURE_POSTGRES_USER=your-username@your-server
+AZURE_POSTGRES_PASSWORD=your-password
+AZURE_POSTGRES_DB=test
+```
+
+For the replication verification script, if replica details are not provided, it will try to derive them from the primary server details by appending "repl" to the hostname.
+
+### Running the Application
+
+You can run the applications using the VS Code launch profiles or directly from the command line:
+
+```bash
+# Initialize and populate the database
+python create_database/database_setup.py
+
+# Verify replication between primary and replica databases
+python create_database/verify_replication.py
+
+# Start the Streamlit web application
+streamlit run create_database/streamlit_app.py
+```
+
+### VS Code Launch Profiles
+
+The project includes three VS Code launch profiles:
+
+1. **DB Initialization** - Runs the database setup script to initialize and populate the database
+2. **Verify Replication** - Checks if data is properly replicated between primary and replica databases
+3. **Streamlit App** - Launches the Streamlit web application for viewing and editing data
 
 ## Resources Created
 
