@@ -21,3 +21,10 @@ crash.*.log
 
 # Ignore environment variables
 .env
+
+# Python specific files
+__pycache__/
+.venv/
+
+# Mac specific files
+.DS_Store

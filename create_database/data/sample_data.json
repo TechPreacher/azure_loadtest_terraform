@@ -1,0 +1,37 @@
+[
+  {
+    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    "name": "Product A",
+    "category": "Electronics",
+    "price": 299.99,
+    "in_stock": true
+  },
+  {
+    "id": "b8b27482-58cc-4372-a567-0e02b2c3d480",
+    "name": "Product B",
+    "category": "Home",
+    "price": 49.99,
+    "in_stock": true
+  },
+  {
+    "id": "c9c38593-58cc-4372-a567-0e02b2c3d481",
+    "name": "Product C",
+    "category": "Clothing",
+    "price": 89.99,
+    "in_stock": false
+  },
+  {
+    "id": "d0d49604-58cc-4372-a567-0e02b2c3d482",
+    "name": "Product D",
+    "category": "Electronics",
+    "price": 149.99,
+    "in_stock": true
+  },
+  {
+    "id": "e1e56715-58cc-4372-a567-0e02b2c3d483",
+    "name": "Product E",
+    "category": "Home",
+    "price": 199.99,
+    "in_stock": false
+  }
+]

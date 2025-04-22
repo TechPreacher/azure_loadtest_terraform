@@ -2,9 +2,9 @@
 
 # Default variables
 SUBSCRIPTION_ID ?= 0b962213-fc84-4c8d-bc1a-2dce59741c5a
-PARAMETERS_FILE ?= parameters.json
+PARAMETERS_FILE ?= bicep/parameters.json
 LOCATION ?= northeurope
-TEMPLATE_FILE ?= main.bicep
+TEMPLATE_FILE ?= bicep/main.bicep
 
 .PHONY: help login set-subscription validate build lint deploy what-if clean
 
@@ -53,4 +53,4 @@ deploy: ## Deploy the Bicep template
 		--parameters $(PARAMETERS_FILE)
 
 clean: ## Clean up compiled artifacts
-	@rm -f *.json.bicep
+	@rm -f bicep/*.json.bicep

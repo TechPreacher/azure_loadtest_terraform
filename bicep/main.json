@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.34.44.8038",
-      "templateHash": "11057960949947899919"
+      "templateHash": "4838608638307493931"
     }
   },
   "parameters": {
@@ -146,7 +146,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.34.44.8038",
-              "templateHash": "16511120690962452599"
+              "templateHash": "11772003559426389058"
             }
           },
           "parameters": {
@@ -360,21 +360,6 @@
               ]
             },
             {
-              "type": "Microsoft.DBforPostgreSQL/flexibleServers/administrators",
-              "apiVersion": "2022-12-01",
-              "name": "[format('{0}/{1}', parameters('postgresServerName'), guid(subscription().id, resourceGroup().id, resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('identityName'))))]",
-              "properties": {
-                "principalType": "ServicePrincipal",
-                "principalName": "[parameters('identityName')]",
-                "tenantId": "[subscription().tenantId]",
-                "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('identityName')), '2023-01-31').principalId]"
-              },
-              "dependsOn": [
-                "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('identityName'))]",
-                "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresServerName'))]"
-              ]
-            },
-            {
               "type": "Microsoft.DBforPostgreSQL/flexibleServers",
               "apiVersion": "2022-12-01",
               "name": "[format('{0}repl', parameters('postgresServerName'))]",
@@ -385,6 +370,8 @@
                 "tier": "MemoryOptimized"
               },
               "properties": {
+                "createMode": "Replica",
+                "sourceServerResourceId": "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresServerName'))]",
                 "version": "14",
                 "administratorLogin": "[parameters('postgresAdminUsername')]",
                 "administratorLoginPassword": "[parameters('postgresAdminPassword')]",
@@ -403,27 +390,119 @@
                 "backup": {
                   "backupRetentionDays": 7,
                   "geoRedundantBackup": "Disabled"
-                },
-                "replicationRole": "Replica",
-                "sourceServerResourceId": "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresServerName'))]"
+                }
               },
               "dependsOn": [
+                "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers/databases', parameters('postgresServerName'), parameters('postgresDatabaseName'))]",
                 "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresServerName'))]"
               ]
             },
             {
-              "type": "Microsoft.DBforPostgreSQL/flexibleServers/administrators",
-              "apiVersion": "2022-12-01",
-              "name": "[format('{0}/{1}', format('{0}repl', parameters('postgresServerName')), guid(subscription().id, resourceGroup().id, resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('identityName'))))]",
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "apiVersion": "2022-07-01",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), 'postgres-username')]",
               "properties": {
-                "principalType": "ServicePrincipal",
-                "principalName": "[parameters('identityName')]",
-                "tenantId": "[subscription().tenantId]",
-                "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('identityName')), '2023-01-31').principalId]"
+                "value": "[parameters('postgresAdminUsername')]"
               },
               "dependsOn": [
-                "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('identityName'))]",
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "apiVersion": "2022-07-01",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), 'postgres-password')]",
+              "properties": {
+                "value": "[parameters('postgresAdminPassword')]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "apiVersion": "2022-07-01",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), 'postgres-server')]",
+              "properties": {
+                "value": "[parameters('postgresServerName')]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]",
+                "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresServerName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "apiVersion": "2022-07-01",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), 'postgres-database')]",
+              "properties": {
+                "value": "[parameters('postgresDatabaseName')]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "apiVersion": "2022-07-01",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), 'postgres-fqdn')]",
+              "properties": {
+                "value": "[reference(resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresServerName')), '2022-12-01').fullyQualifiedDomainName]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]",
+                "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresServerName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "apiVersion": "2022-07-01",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), 'postgres-replica-server')]",
+              "properties": {
+                "value": "[format('{0}repl', parameters('postgresServerName'))]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]",
                 "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', format('{0}repl', parameters('postgresServerName')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "apiVersion": "2022-07-01",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), 'postgres-replica-fqdn')]",
+              "properties": {
+                "value": "[reference(resourceId('Microsoft.DBforPostgreSQL/flexibleServers', format('{0}repl', parameters('postgresServerName'))), '2022-12-01').fullyQualifiedDomainName]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]",
+                "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', format('{0}repl', parameters('postgresServerName')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Resources/deploymentScripts",
+              "apiVersion": "2020-10-01",
+              "name": "deploymentMessage",
+              "location": "[parameters('location')]",
+              "kind": "AzureCLI",
+              "properties": {
+                "azCliVersion": "2.44.0",
+                "retentionInterval": "P1D",
+                "timeout": "PT5M",
+                "scriptContent": "      echo \"=== IMPORTANT: Manual action required ===\"\n      echo \"After deployment, you need to manually add an AD admin to the primary PostgreSQL server.\"\n      echo \"The replica server will inherit the AD admin configuration automatically.\"\n      echo \"\"\n      echo \"Run the following command to add an AD admin:\"\n      echo \"\"\n      echo \"az postgres flexible-server ad-admin create \\\\\"\n      echo \"  --server-name $POSTGRES_SERVER \\\\\"\n      echo \"  --resource-group $RESOURCE_GROUP \\\\\"\n      echo \"  --object-id <your-aad-object-id> \\\\\"\n      echo \"  --principal-type User \\\\\"\n      echo \"  --display-name <your-aad-display-name>\"\n      echo \"\"\n      echo \"=== End of Manual Actions ===\"\n    ",
+                "environmentVariables": [
+                  {
+                    "name": "POSTGRES_SERVER",
+                    "value": "[parameters('postgresServerName')]"
+                  },
+                  {
+                    "name": "RESOURCE_GROUP",
+                    "value": "[resourceGroup().name]"
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', format('{0}repl', parameters('postgresServerName')))]",
+                "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresServerName'))]"
               ]
             }
           ],
@@ -475,6 +554,10 @@
             "postgresReplicaServerFqdn": {
               "type": "string",
               "value": "[reference(resourceId('Microsoft.DBforPostgreSQL/flexibleServers', format('{0}repl', parameters('postgresServerName'))), '2022-12-01').fullyQualifiedDomainName]"
+            },
+            "manualActionRequired": {
+              "type": "string",
+              "value": "After deployment, manually add AAD admin to PostgreSQL servers. See deployment script output for instructions."
             }
           }
         }

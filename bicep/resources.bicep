@@ -120,29 +120,7 @@ resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01' =
   }
 }
 
-// PostgreSQL Add User Assigned Managed Identity
-// resource postgresIdentityAssignment 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2024-08-01' = {
-//   name: guid(postgresServer.id, managedIdentity.id, 'administrator')
-//   parent: postgresServer
-//   properties: {
-//     principalType: 'ServicePrincipal'
-//     principalName: managedIdentity.name
-//     tenantId: subscription().tenantId
-//   }
-//   dependsOn: [
-//     postgresDatabase
-//   ]
-// }
-resource postgresIdentityAssignment 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2024-08-01' = {
-  parent: postgresServer
-  name: 'activeDirectory'
-  properties: {
-    administratorType: 'ActiveDirectory'
-    login: managedIdentity.name
-    sid: managedIdentity.properties.principalId
-    tenantId: subscription().tenantId
-  }
-}
+// Do not try to add service principal to PostgreSQL server as it does not work with Bicep.
 
 // PostgreSQL Firewall Rules - Allow all
 resource postgresFirewallRuleAllowAll 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2022-12-01' = {
