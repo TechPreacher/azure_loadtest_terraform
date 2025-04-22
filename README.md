@@ -7,12 +7,22 @@ User credentials and JMeter script parameters are stored in the KeyVault.
 
 ## Project Structure
 
-### Bicep Infrastructure
+### Infrastructure as Code
+
+#### Bicep Infrastructure
 
 - `bicep/main.bicep`: Main template that creates a resource group and deploys all resources (subscription scope)
 - `bicep/resources.bicep`: Module that deploys all resources within the resource group
 - `bicep/load_test.bicep`: Module that configures the Azure Load Test for PostgreSQL testing
 - `bicep/parameters.json`: Parameters file for customizing deployments
+
+#### Terraform Infrastructure
+
+- `terraform/`: Contains equivalent Terraform configuration to deploy the same infrastructure
+- `terraform/README.md`: Instructions for using the Terraform configuration
+
+#### Common Resources
+
 - `load_test_artifacts/`: Contains JMeter script and PostgreSQL JDBC driver for load testing
 
 ### Python Database Application
@@ -26,9 +36,13 @@ The project includes a Python application in the `create_database` directory tha
 
 ## Deployment
 
-### Using the Makefile
+You can choose to deploy the infrastructure using either Bicep or Terraform.
 
-The project includes a Makefile to simplify the deployment process:
+### Option 1: Using Bicep
+
+#### Using the Makefile
+
+The project includes a Makefile to simplify the Bicep deployment process:
 
 ```bash
 # Show available commands
@@ -53,9 +67,9 @@ make what-if SUBSCRIPTION_ID=your-subscription-id
 make deploy SUBSCRIPTION_ID=your-subscription-id
 ```
 
-### Manual Deployment
+#### Manual Bicep Deployment
 
-To deploy manually:
+To deploy Bicep manually:
 
 ```bash
 # Login to Azure
@@ -69,6 +83,51 @@ az deployment sub create \
   --location northeurope \
   --template-file bicep/main.bicep \
   --parameters bicep/parameters.json
+```
+
+### Option 2: Using Terraform
+
+See the [Terraform README](terraform/README.md) for detailed instructions on deploying with Terraform.
+
+#### Using the Makefile for Terraform
+
+The project includes Terraform commands in the Makefile:
+
+```bash
+# Initialize Terraform
+make tf-init
+
+# Validate Terraform configuration
+make tf-validate
+
+# Preview changes
+make tf-plan SUBSCRIPTION_ID=your-subscription-id
+
+# Apply configuration
+make tf-apply SUBSCRIPTION_ID=your-subscription-id
+
+# Destroy infrastructure when done
+make tf-destroy SUBSCRIPTION_ID=your-subscription-id
+```
+
+#### Manual Terraform Commands
+
+```bash
+# Initialize Terraform
+cd terraform
+terraform init
+
+# Validate configuration
+terraform validate
+
+# Review deployment plan
+terraform plan
+
+# Apply the configuration
+terraform apply
+
+# Destroy resources when done
+terraform destroy
 ```
 
 ## Python Application Setup
@@ -180,9 +239,11 @@ After deploying the infrastructure:
 4. Save the test configuration
 5. Run the test and monitor the performance of both primary and replica servers
 
-## Manual Steps Required After Deployment
+## Post-Deployment Steps
 
-After deployment, you need to manually add an AD administrator to the primary PostgreSQL server. The replica server will inherit the AD admin configuration automatically. The deployment script will output instructions, but the general command is:
+### When Using Bicep
+
+With Bicep deployment, you need to manually add a Microsoft Entra administrator to the primary PostgreSQL server. The replica server will inherit the AD admin configuration automatically. The deployment script will output instructions, but the general command is:
 
 ```bash
 az postgres flexible-server ad-admin create \
@@ -198,3 +259,7 @@ You can get your AAD object ID by running:
 ```bash
 az ad signed-in-user show --query id -o tsv
 ```
+
+### When Using Terraform
+
+With Terraform deployment, the User Assigned Managed Identity is automatically configured as a Microsoft Entra administrator for the PostgreSQL server.

@@ -1,0 +1,97 @@
+# Azure Load Test Terraform Configuration
+
+This folder contains Terraform configuration to deploy the same infrastructure as the Bicep templates in the parent directory.
+
+## Resources Deployed
+
+- Resource Group
+- Azure Load Test resource
+- Azure Load Test configuration
+- User Assigned Managed Identity
+- Key Vault with the Managed Identity assigned as Key Vault Administrator
+- PostgreSQL Flexible Server (Memory Optimized, Standard_E2ds_v5)
+  - Primary server
+  - Test database
+  - Public network access enabled
+  - Microsoft Entra authentication enabled
+- PostgreSQL Flexible Server Replica
+  - Read-only replica of the primary server
+  - Created using 'Replica' create mode
+
+## Prerequisites
+
+1. [Terraform](https://www.terraform.io/downloads.html) (v1.0.0 or newer)
+2. [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) (logged in and subscription set)
+
+## Deployment Steps
+
+### Using the Makefile
+
+The project includes a Makefile in the parent directory with Terraform commands:
+
+```bash
+# Initialize Terraform
+make tf-init
+
+# Validate Terraform configuration
+make tf-validate
+
+# Preview changes
+make tf-plan SUBSCRIPTION_ID=your-subscription-id
+
+# Apply configuration
+make tf-apply SUBSCRIPTION_ID=your-subscription-id
+
+# Destroy infrastructure when done
+make tf-destroy SUBSCRIPTION_ID=your-subscription-id
+```
+
+### Manual Deployment
+
+1. Initialize Terraform:
+   ```bash
+   terraform init
+   ```
+
+2. Review the deployment plan:
+   ```bash
+   terraform plan
+   ```
+
+3. Apply the configuration:
+   ```bash
+   terraform apply
+   ```
+
+4. If you want to customize the deployment, either:
+   - Edit `terraform.tfvars` file
+   - Or pass variables on the command line:
+     ```bash
+     terraform apply -var="resource_group_name=my-custom-rg" -var="location=westeurope"
+     ```
+
+## Post-Deployment Steps
+
+After deployment:
+
+1. The User Assigned Managed Identity is automatically configured as a Microsoft Entra administrator for the PostgreSQL server.
+
+2. Upload load test files through the Azure Portal:
+   - Navigate to Azure Portal > Load Testing > [Load Test Name] > Tests
+   - Click on the test configuration
+   - Click 'Edit' and upload:
+     - JMeter script: `load_test_artifacts/jmeter_script.jmx`
+     - PostgreSQL JDBC driver: `load_test_artifacts/postgresql-42.7.5.jar` (in the 'Additional Files' section)
+
+## Clean Up
+
+To remove all deployed resources:
+
+```bash
+terraform destroy
+```
+
+## Notes
+
+- The PostgreSQL password is stored in the Terraform state file in plaintext. For production, consider using a more secure approach for secrets management.
+- The Load Test files need to be uploaded manually as Terraform doesn't support direct file uploads.
