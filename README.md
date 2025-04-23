@@ -301,7 +301,7 @@ These features help avoid common deployment issues with Azure PostgreSQL Flexibl
 - The PostgreSQL password is stored in the Terraform state file in plaintext. For production, consider using a more secure approach for secrets management.
 - The Load Test files need to be uploaded manually as Terraform doesn't support direct file uploads.
 
-## Error Handling
+## 👻 Error Handling
 
 If the load test fails, you will see the the error percentage go to 100% and the test will be marked as failed. You can check the `csv` and `log` files for more details.
 
