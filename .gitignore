@@ -28,3 +28,6 @@ __pycache__/
 
 # Mac specific files
 .DS_Store
+
+# Terraform generated scripts
+terraform/load_test_variables.env

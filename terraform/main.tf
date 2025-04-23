@@ -9,6 +9,10 @@ terraform {
       source  = "hashicorp/time"
       version = ">=0.9.0"
     }
+    local = {
+      source  = "hashicorp/local"
+      version = ">=2.0.0"
+    }
   }
   required_version = ">= 1.0.0"
 }
@@ -76,6 +80,12 @@ resource "azurerm_key_vault" "main" {
   soft_delete_retention_days  = var.soft_delete_retention_days
   purge_protection_enabled    = false
   sku_name                    = var.key_vault_sku
+  
+  # Network configuration - Allow public access from all networks
+  network_acls {
+    default_action = "Allow"
+    bypass         = "AzureServices"
+  }
 
   # Add access policy for the currently logged-in user or service principal
   access_policy {
@@ -432,6 +442,12 @@ resource "azurerm_load_test" "main" {
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
   tags                = var.tags
+  
+  # Assign the managed identity to the load test
+  identity {
+    type = "UserAssigned"
+    identity_ids = [azurerm_user_assigned_identity.main.id]
+  }
   
   # Add depends_on to ensure it's created after the database resources
   depends_on = [
