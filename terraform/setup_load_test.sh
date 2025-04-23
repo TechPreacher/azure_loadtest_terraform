@@ -58,8 +58,8 @@ if [ -z "$TEST_EXISTS" ]; then
     --test-plan "$SCRIPT_PATH" \
     --engine-instances "$ENGINE_INSTANCES" \
     --engine-ref-id-type SystemAssigned \
-    --keyvault-reference-id "$USER_ASSIGNED_IDENTITY_ID" \
-    --metrics-reference-id "$USER_ASSIGNED_IDENTITY_ID" \
+    --keyvault-reference-id "$USER_ASSIGNED_IDENTITY_RESOURCE_NAME" \
+    --metrics-reference-id "$USER_ASSIGNED_IDENTITY_RESOURCE_NAME" \
     --env main_threads=$MAIN_THREADS main_loops=$MAIN_LOOPS main_database=$MAIN_DATABASE replica_threads=$REPLICA_THREADS replica_loops=$REPLICA_LOOPS replica_database=$REPLICA_DATABASE main_writes_per_minute=$MAIN_WRITES_PER_MINUTE replica_reads_per_minute=$REPLICA_READS_PER_MINUTE \
     --secret mainpassword=$POSTGRES_ADMIN_PASSWORD_SECRET replicapassword=$POSTGRES_ADMIN_PASSWORD_SECRET mainuser=$POSTGRES_ADMIN_USERNAME_SECRET replicauser=$POSTGRES_ADMIN_USERNAME_SECRET
 
@@ -80,8 +80,8 @@ else
     --test-plan "$SCRIPT_PATH" \
     --engine-instances "$ENGINE_INSTANCES" \
     --engine-ref-id-type SystemAssigned \
-    --keyvault-reference-id "$USER_ASSIGNED_IDENTITY_ID" \
-    --metrics-reference-id "$USER_ASSIGNED_IDENTITY_ID" \
+    --keyvault-reference-id "$USER_ASSIGNED_IDENTITY_RESOURCE_NAME" \
+    --metrics-reference-id "$USER_ASSIGNED_IDENTITY_RESOURCE_NAME" \
     --env main_threads=$MAIN_THREADS main_loops=$MAIN_LOOPS main_database=$MAIN_DATABASE replica_threads=$REPLICA_THREADS replica_loops=$REPLICA_LOOPS replica_database=$REPLICA_DATABASE main_writes_per_minute=$MAIN_WRITES_PER_MINUTE replica_reads_per_minute=$REPLICA_READS_PER_MINUTE \
     --secret mainpassword=$POSTGRES_ADMIN_PASSWORD_SECRET replicapassword=$POSTGRES_ADMIN_PASSWORD_SECRET mainuser=$POSTGRES_ADMIN_USERNAME_SECRET replicauser=$POSTGRES_ADMIN_USERNAME_SECRET
 fi
@@ -90,24 +90,28 @@ fi
 if [ -f "$JAR_PATH" ]; then
   echo
   echo "JDBC driver found at: $JAR_PATH"
-  echo "Due to variations in the CLI command format, please upload this file manually through the Azure Portal."
-  echo ""
+  echo
+  echo "Please upload this file manually through the Azure Portal."
+  echo
   echo "To upload the JDBC driver manually:"
   echo "1. Go to Azure Portal > Load Testing > $LOAD_TEST_NAME > Tests"
   echo "2. Select the test '$TEST_NAME'"
-  echo "3. Click 'Edit' and navigate to the 'Test Plan' section"
+  echo "3. Click 'Configure', select 'Test' and navigate to the 'Test Plan' section"
   echo "4. Upload the JDBC driver file: $JAR_PATH"
-  echo ""
 else
   echo
   echo "Warning: JDBC driver not found at $JAR_PATH"
 fi
 
-echo "Load test configuration completed. Please check the Azure Portal to verify all settings."
-echo ""
-echo "Some settings may need to be configured manually in the portal:"
-echo "1. Navigate to Azure Portal > Load Testing > $LOAD_TEST_NAME > Tests"
-echo "2. Click on the '$TEST_NAME' test"
-echo "3. Check and complete any missing configurations"
-echo ""
+echo
+echo "Please manually update the following settings in the load test:"
+echo
+echo "1. Go to Azure Portal > Load Testing > $LOAD_TEST_NAME > Tests"
+echo "2. Select the test '$TEST_NAME'"
+echo "3. Click 'Configure', select 'Test'."
+echo "4. In the 'Test Plan' section, set 'Identity' to 'User-assigned identity' and select '$USER_ASSIGNED_IDENTITY_NAME'."
+echo "5. In the 'Monitoring' section, under 'Resources', add the two PostgreSQL databases: '$PRIMARY_SERVER_NAME' and '$REPLICA_SERVER_NAME'."
+echo "6. In the 'Monitoring' section, under 'Metrics reference identity', set the 'Identity type'to 'User-assigned identity' and select '$USER_ASSIGNED_IDENTITY_NAME'."
+echo "7. Click 'Apply' to save the changes."
+echo
 echo "Load test setup script completed."
