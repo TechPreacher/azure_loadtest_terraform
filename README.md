@@ -69,6 +69,20 @@ SUBSCRIPTION_ID ?= <your-subscription-id>
 
 ## 🚀 Deployment
 
+### 🎯 Overview of the 9 simple steps needed to deploy, configure and run the solution
+
+1. Login to Azure with the Azure CLI `az login` and set the subscription with `az account set --subscription <subscription-id>`
+2. Initialize Terraform with `make init`
+3. Validate the Terraform configuration with `make validate`
+4. Preview the changes with `make plan`
+5. Apply the configuration with `make apply`
+6. Run the Python scripts to create and populate the database
+  6.1 Run `database_setup.py` to create the database and populate it with sample data
+  6.2 Run `verify_replication.py` to verify that the data is replicated correctly
+7. cd to the `terraform` subfolder and run the script `setup_load_test.sh` to configure the load test
+8. Manually upload the JDBC driver located in `load_test_artifacts/postgresql-42.7.5.jar` to the Azure Load Test resource and finalize the test configuration as outlined in the [Load Testing Configuration](#🧪-load-testing-configuration) section
+9. Run the load test from the Azure Portal
+
 ### 📝 Using the Makefile
 
 The project includes a Makefile to simplify the Terraform deployment process:
