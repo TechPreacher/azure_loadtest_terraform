@@ -55,7 +55,7 @@ DB_CONFIG = {
 Base = declarative_base()
 
 # Add type alias for mypy
-T = TypeVar('T', bound=Base)
+T = TypeVar("T", bound=Base)
 ModelType = Type[T]
 
 
