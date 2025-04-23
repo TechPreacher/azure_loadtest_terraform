@@ -1,11 +1,11 @@
-# Azure Load Test for Azure Database for PostgreSQL Flexible Server with Replica
+# 🔄 Azure Load Test for Azure Database for PostgreSQL Flexible Server with Replica
 
 This project uses Terraform to deploy Azure Load Test resources and includes a Python application for database management.
 The configuration deploys an Azure Load Test resource, an Azure KeyVault, an Azure Database for PostgreSQL Flexible Server with a replica, and a User Assigned Managed Identity to access KeyVault from the load test.
 The load test uses an Apache JMeter script to test the database.
 User credentials and JMeter script parameters are stored in the KeyVault.
 
-## Prerequisites
+## 📋 Prerequisites
 
 Before you can use this project, you need to have the following tools installed:
 
@@ -20,9 +20,9 @@ Before you can use this project, you need to have the following tools installed:
 - **Streamlit** (for running the web app): Installed via Poetry
 - **Make** (for using the Makefile): Typically pre-installed on Linux/Mac, for Windows use [GnuWin32](http://gnuwin32.sourceforge.net/packages/make.htm)
 
-## Project Structure
+## 📂 Project Structure
 
-### Infrastructure as Code
+### 🏗️ Infrastructure as Code
 
 - `terraform/`: Contains the Terraform configuration for deploying all infrastructure
   - `terraform/main.tf`: Main Terraform configuration file
@@ -37,7 +37,7 @@ Before you can use this project, you need to have the following tools installed:
   - `load_test_artifacts/jmeter_script.jmx`: JMeter test plan
   - `load_test_artifacts/postgresql-42.7.5.jar`: JDBC driver for PostgreSQL
 
-### Python Database Application
+### 🐍 Python Database Application
 
 The project includes a Python application in the `create_database` directory that helps create and populate the PostgreSQL database:
 
@@ -46,7 +46,7 @@ The project includes a Python application in the `create_database` directory tha
 - `create_database/streamlit_app.py`: Streamlit web application to view and edit data in the database
 - `create_database/data/sample_data.json`: Sample data for database initialization
 
-## Preparation
+## 🔧 Preparation
 
 In the `/terraform/terraform.tfvars` file, replace the default values with names that suit you. Also make sure to include your valid subscription id.
 
@@ -67,9 +67,9 @@ in the `Makefile`, add your subscription id to the line
 SUBSCRIPTION_ID ?= <your-subscription-id>
 ```
 
-## Deployment
+## 🚀 Deployment
 
-### Using the Makefile
+### 📝 Using the Makefile
 
 The project includes a Makefile to simplify the Terraform deployment process:
 
@@ -99,7 +99,7 @@ make apply SUBSCRIPTION_ID=your-subscription-id
 make destroy SUBSCRIPTION_ID=your-subscription-id
 ```
 
-### Manual Terraform Commands
+### ⌨️ Manual Terraform Commands
 
 If you prefer not to use the Makefile, you can run the Terraform commands directly:
 
@@ -132,13 +132,13 @@ You can customize the deployment by:
      -var="location=westeurope"
    ```
 
-## Python Application Setup
+## 🐍 Python Application Setup
 
 The Python scripts are used to create the database and populate some initial values before running the load test.
 
 The Python application is built using Poetry for dependency management.
 
-### Setup the Python Environment
+### 🔧 Setup the Python Environment
 
 ```bash
 # Install dependencies using Poetry
@@ -148,11 +148,11 @@ poetry install
 poetry shell
 ```
 
-### Configure Database Connection
+### 🔌 Configure Database Connection
 
 When running the Terraform scripts, the `/terraform/load_test_variables.env` file is automatically generated which is used for the Python scripts to connect to the primary and the replica databases.
 
-### Running the Application
+### ▶️ Running the Application
 
 You can run the applications using the VS Code launch profiles or directly from the command line:
 
@@ -167,7 +167,7 @@ python create_database/verify_replication.py
 streamlit run create_database/streamlit_app.py
 ```
 
-### VS Code Launch Profiles
+### 🧩 VS Code Launch Profiles
 
 The project includes three VS Code launch profiles:
 
@@ -175,7 +175,7 @@ The project includes three VS Code launch profiles:
 2. **Verify Replication** - Checks if data is properly replicated between primary and replica databases
 3. **Streamlit App** - Launches the Streamlit web application for viewing and editing data
 
-## Resources Created
+## 🏢 Resources Created
 
 - Resource Group
 - Azure Load Test resource
@@ -191,7 +191,7 @@ The project includes three VS Code launch profiles:
   - Read-only replica of the primary server
   - Created using 'Replica' create mode
 
-## Load Testing Configuration
+## 🧪 Load Testing Configuration
 
 The deployment includes a JMeter-based load test configuration with:
 
@@ -202,7 +202,7 @@ The deployment includes a JMeter-based load test configuration with:
 - User Assigned Managed Identity for secure Key Vault access
 - Monitoring of PostgreSQL server metrics during test execution
 
-### Automated Load Test Setup
+### 🤖 Automated Load Test Setup
 
 After deploying the infrastructure with Terraform, you can use the included setup script to configure the load test:
 
@@ -223,7 +223,7 @@ The script automatically:
 - Configures Key Vault references for secure credential access
 - Provides guidance for any manual steps that might be needed
 
-### Manual Steps for Load Testing
+### 👤 Manual Steps for Load Testing
 
 Some aspects of load test configuration may still require manual steps:
 
@@ -236,11 +236,11 @@ Some aspects of load test configuration may still require manual steps:
 4. Save the test configuration
 5. Run the test and monitor the performance of both primary and replica servers
 
-## Post-Deployment Steps
+## 🔄 Post-Deployment Steps
 
 The Terraform deployment automatically configures the User Assigned Managed Identity as a Microsoft Entra administrator for the PostgreSQL server. No manual steps are required for the Entra admin configuration.
 
-### Load Test Environment Variables
+### 🔑 Load Test Environment Variables
 
 After deployment, Terraform generates a `load_test_variables.env` file in the terraform directory containing all necessary configuration variables for the load test, including:
 
@@ -253,7 +253,7 @@ After deployment, Terraform generates a `load_test_variables.env` file in the te
 
 This file is sourced by the `setup_load_test.sh` script to configure the load test. You can also use it as a reference for manual configuration or troubleshooting.
 
-## Terraform Reliability Features
+## 🛡️ Terraform Reliability Features
 
 This Terraform configuration implements several reliability features to handle Azure API limitations:
 
@@ -282,7 +282,7 @@ These features help avoid common deployment issues with Azure PostgreSQL Flexibl
 - Timing issues with replica creation
 - Secret creation failures
 
-## Notes
+## 📝 Notes
 
 - The PostgreSQL password is stored in the Terraform state file in plaintext. For production, consider using a more secure approach for secrets management.
 - The Load Test files need to be uploaded manually as Terraform doesn't support direct file uploads.
