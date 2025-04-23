@@ -51,14 +51,14 @@ The project includes a Python application in the `create_database` directory tha
 In the `/terraform/terraform.tfvars` file, replace the default values with names that suit you. Also make sure to include your valid subscription id.
 
 ```yaml
-subscription_id         = "<your subscription id>"
-resource_group_name     = "resource-group-name"
-load_test_name         = "loadtest-name"
-identity_name          = "user-assigned-identity-name"
-key_vault_name         = "keyvaultname"
-postgres_server_name   = "postgresservername"
-postgres_admin_username = "pgadmin"
-postgres_admin_password = "<your custom password>"
+subscription_id            = "<your subscription id>"
+resource_group_name        = "resource-group-name"
+load_test_name             = "loadtest-name"
+identity_name              = "user-assigned-identity-name"
+key_vault_name             = "keyvaultname"
+postgres_server_name       = "postgresservername"
+postgres_admin_username    = "pgadmin"
+postgres_admin_password    = "<your custom password>"
 ```
 
 in the `Makefile`, add your subscription id to the line
