@@ -13,6 +13,8 @@ Before you can use this project, you need to have the following tools installed:
 - **Poetry**: [Installation instructions](https://python-poetry.org/docs/#installation)
 - **Terraform 1.5+**: [Download from terraform.io](https://www.terraform.io/downloads)
 - **Azure CLI**: [Installation instructions](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
+  - Logged in to your Azure account (`az login`)
+  - Subscription set (`az account set --subscription <subscription-id>`)
 - **Git**: [Download from git-scm.com](https://git-scm.com/downloads)
 - **PostgreSQL Client** (optional): [Download from postgresql.org](https://www.postgresql.org/download/)
 - **Streamlit** (for running the web app): Installed via Poetry
@@ -23,8 +25,11 @@ Before you can use this project, you need to have the following tools installed:
 ### Infrastructure as Code
 
 - `terraform/`: Contains the Terraform configuration for deploying all infrastructure
-  - `terraform/README.md`: Detailed instructions for the Terraform configuration
-  - `terraform/LOAD_TEST_README.md`: Documentation for the load test setup
+  - `terraform/main.tf`: Main Terraform configuration file
+  - `terraform/variables.tf`: Variable definitions
+  - `terraform/outputs.tf`: Output definitions
+  - `terraform/data.tf`: Data sources
+  - `terraform/load_test.tf`: Load test specific resources
   - `terraform/setup_load_test.sh`: Script to automate load test configuration
   - `terraform/load_test_variables.env`: Generated environment variables for load testing
   - `terraform/env_vars.json`: Configuration for local environment variables
@@ -94,6 +99,17 @@ terraform apply -var="subscription_id=your-subscription-id"
 # Destroy resources when done
 terraform destroy -var="subscription_id=your-subscription-id"
 ```
+
+You can customize the deployment by:
+1. Editing variables directly in the terraform files
+2. Creating a `terraform.tfvars` file with your custom values
+3. Passing variables on the command line:
+   ```bash
+   terraform apply \
+     -var="subscription_id=your-subscription-id" \
+     -var="resource_group_name=my-custom-rg" \
+     -var="location=westeurope"
+   ```
 
 ## Python Application Setup
 
@@ -213,3 +229,37 @@ After deployment, Terraform generates a `load_test_variables.env` file in the te
 - File paths for JMeter script and JDBC driver
 
 This file is sourced by the `setup_load_test.sh` script to configure the load test. You can also use it as a reference for manual configuration or troubleshooting.
+
+## Terraform Reliability Features
+
+This Terraform configuration implements several reliability features to handle Azure API limitations:
+
+1. **Extended Timeouts**: All resources have configured timeouts to allow more time for operations to complete.
+
+2. **Time Delays**: Strategic delays between operations using `time_sleep` resources:
+   - 30-second delay after PostgreSQL server creation before creating firewall rules
+   - 60-second delay before creating the replica server
+   - 30-second delay before creating Key Vault secrets
+
+3. **Explicit Dependencies**: Resources declare explicit dependencies to ensure proper provisioning order.
+
+4. **Azure Provider Configuration**:
+   - Higher timeouts for client operations (30 minutes)
+   - Improved recovery options for Key Vault and other resources
+   - Force wait for PostgreSQL operations to complete
+
+5. **PostgreSQL-specific Improvements**:
+   - Firewall rules creation separated to avoid concurrent operation issues
+   - Replica server created only after database is confirmed ready
+   - Careful ordering of resource creation to avoid "server busy" errors
+
+These features help avoid common deployment issues with Azure PostgreSQL Flexible Server, such as:
+- "Server busy with another operation" errors
+- Key Vault access policy conflicts
+- Timing issues with replica creation
+- Secret creation failures
+
+## Notes
+
+- The PostgreSQL password is stored in the Terraform state file in plaintext. For production, consider using a more secure approach for secrets management.
+- The Load Test files need to be uploaded manually as Terraform doesn't support direct file uploads.
