@@ -305,11 +305,11 @@ These features help avoid common deployment issues with Azure PostgreSQL Flexibl
 
 If the load test fails, you will see the the error percentage go to 100% and the test will be marked as failed. You can check the `csv` and `log` files for more details.
 
-[!img](./media/load-test-error-1.png)
+![img](./media/load-test-error-1.png)
 
 Download the csv and log files from the Azure Portal and extract them.
 
-[!img](./media/load-test-error-2.png)
+![img](./media/load-test-error-2.png)
 
 Check them for errors.
 
