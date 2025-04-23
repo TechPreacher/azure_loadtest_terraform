@@ -300,3 +300,27 @@ These features help avoid common deployment issues with Azure PostgreSQL Flexibl
 
 - The PostgreSQL password is stored in the Terraform state file in plaintext. For production, consider using a more secure approach for secrets management.
 - The Load Test files need to be uploaded manually as Terraform doesn't support direct file uploads.
+
+## Error Handling
+
+If the load test fails, you will see the the error percentage go to 100% and the test will be marked as failed. You can check the `csv` and `log` files for more details.
+
+[!img](./media/load-test-error-1.png)
+
+Download the csv and log files from the Azure Portal and extract them.
+
+[!img](./media/load-test-error-2.png)
+
+Check them for errors.
+
+```log
+timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+1745410226511,1,WRITE to Main Db,null 0,java.sql.SQLException: Cannot create JDBC driver of class 'org.postgresql.Driver' for connect URL 'jdbc:tftestpgserver.postgres.database.azure.com:5432/test',Thread Group Write Main Db 1-1,text,false,,134,0,1,1,null,0,0,1
+1745410226535,3,READ from Replica Db,null 0,java.sql.SQLException: Cannot create JDBC driver of class 'org.postgresql.Driver' for connect URL 'jdbc:tftestpgserverrepl.postgres.database.azure.com:5432/test',Thread Group Read ReplicaDb 2-1,text,false,,138,0,1,2,null,0,0,3
+1745410226775,1,READ from Replica Db,null 0,java.sql.SQLException: Cannot create JDBC driver of class 'org.postgresql.Driver' for connect URL 'jdbc:tftestpgserverrepl.postgres.database.azure.com:5432/test',Thread Group Read ReplicaDb 2-2,text,false,,138,0,2,3,null,0,0,1
+1745410226784,1,READ from Replica Db,null 0,java.sql.SQLException: Cannot create JDBC driver of class 'org.postgresql.Driver' for connect URL 'jdbc:tftestpgserverrepl.postgres.database.azure.com:5432/test',Thread Group Read ReplicaDb 2-1,text,false,,138,0,2,3,null,0,0,1
+1745410227024,1,READ from Replica Db,null 0,java.sql.SQLException: Cannot create JDBC driver of class 'org.postgresql.Driver' for connect URL 'jdbc:tftestpgserverrepl.postgres.database.azure.com:5432/test',Thread Group Read ReplicaDb 2-3,text,false,,138,0,3,4,null,0,0,1
+1745410227273,1,READ from Replica Db,null 0,java.sql.SQLException: Cannot create JDBC driver of class 'org.postgresql.Driver' for connect URL 'jdbc:tftestpgserverrepl.postgres.database.azure.com:5432/test',Thread Group Read ReplicaDb 2-4,text,false,,138,0,4,5,null,0,0,1
+1745410227275,6,READ from Replica Db,null 0,java.sql.SQLException: Cannot create JDBC driver of class 'org.postgresql.Driver' for connect URL 'jdbc:tftestpgserverrepl.postgres.database.azure.com:5432/test',Thread Group Read ReplicaDb 2-2,text,false,,138,0,4,5,null,0,0,6
+1
+```
