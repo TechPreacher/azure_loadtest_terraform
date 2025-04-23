@@ -7,19 +7,19 @@
 VARIABLES_FILE="./load_test_variables.sh"
 if [ ! -f "$VARIABLES_FILE" ]; then
   echo
-  echo "Error: Variables file not found at $VARIABLES_FILE"
+  echo "❌ Error: Variables file not found at $VARIABLES_FILE"
   echo "Make sure you run this script from the directory containing load_test_variables.sh"
   exit 1
 fi
 
 # Source the variables
 echo
-echo "Loading configuration from $VARIABLES_FILE..."
+echo "💾 Loading configuration from $VARIABLES_FILE..."
 source "$VARIABLES_FILE"
 
 # Check if the Azure CLI load testing extension is installed
 echo
-echo "Checking for Azure CLI load testing extension..."
+echo "🔍 Checking for Azure CLI load testing extension..."
 if ! az extension list | grep -q "load"; then
   echo "Installing Azure CLI load testing extension..."
   az extension add -n load-testing
@@ -28,11 +28,11 @@ fi
 # Get current subscription ID
 SUBSCRIPTION_ID=$(az account show --query id -o tsv)
 echo
-echo "Using subscription: $SUBSCRIPTION_ID"
+echo "📜 Using subscription: $SUBSCRIPTION_ID"
 
 # Create or update the test
 echo
-echo "Creating and configuring the load test..."
+echo "🛠️ Creating and configuring the load test..."
 
 # Step 1: Check if the test already exists and create it if not
 TEST_EXISTS=$(az load test list \
@@ -42,7 +42,7 @@ TEST_EXISTS=$(az load test list \
 
 if [ -z "$TEST_EXISTS" ]; then
   echo
-  echo "Creating new test '$TEST_NAME'..."
+  echo "💫 Creating new test '$TEST_NAME'..."
   
   # Create a test with basic parameters
   az load test create \
@@ -65,7 +65,7 @@ if [ -z "$TEST_EXISTS" ]; then
 
 else
   echo
-  echo "Test '$TEST_NAME' already exists, updating configuration..."
+  echo "👷 Test '$TEST_NAME' already exists, updating configuration..."
   
   # Update test with basic parameters
   az load test update \
@@ -89,7 +89,7 @@ fi
 # Step 2: Upload additional files - this often requires manual steps
 if [ -f "$JAR_PATH" ]; then
   echo
-  echo "JDBC driver found at: $JAR_PATH"
+  echo "✅ JDBC driver found at: $JAR_PATH"
   echo
   echo "Please upload this file manually through the Azure Portal."
   echo
@@ -100,11 +100,11 @@ if [ -f "$JAR_PATH" ]; then
   echo "4. Upload the JDBC driver file: $JAR_PATH"
 else
   echo
-  echo "Warning: JDBC driver not found at $JAR_PATH"
+  echo "❌ Warning: JDBC driver not found at $JAR_PATH"
 fi
 
 echo
-echo "Please manually update the following settings in the load test:"
+echo "‼️ Please manually update the following settings in the load test:"
 echo
 echo "1. Go to Azure Portal > Load Testing > $LOAD_TEST_NAME > Tests"
 echo "2. Select the test '$TEST_NAME'"
@@ -114,4 +114,4 @@ echo "5. In the 'Monitoring' section, under 'Resources', add the two PostgreSQL 
 echo "6. In the 'Monitoring' section, under 'Metrics reference identity', set the 'Identity type'to 'User-assigned identity' and select '$USER_ASSIGNED_IDENTITY_NAME'."
 echo "7. Click 'Apply' to save the changes."
 echo
-echo "Load test setup script completed."
+echo "✅ Load test setup script completed."
