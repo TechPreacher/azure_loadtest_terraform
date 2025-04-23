@@ -46,6 +46,27 @@ The project includes a Python application in the `create_database` directory tha
 - `create_database/streamlit_app.py`: Streamlit web application to view and edit data in the database
 - `create_database/data/sample_data.json`: Sample data for database initialization
 
+## Preparation
+
+In the `/terraform/terraform.tfvars` file, replace the default values with names that suit you. Also make sure to include your valid subscription id.
+
+```yaml
+subscription_id         = "<your subscription id>"
+resource_group_name     = "resource-group-name"
+load_test_name         = "loadtest-name"
+identity_name          = "user-assigned-identity-name"
+key_vault_name         = "keyvaultname"
+postgres_server_name   = "postgresservername"
+postgres_admin_username = "pgadmin"
+postgres_admin_password = "<your custom password>"
+```
+
+in the `Makefile`, add your subscription id to the line
+
+```plain
+SUBSCRIPTION_ID ?= <your-subscription-id>
+```
+
 ## Deployment
 
 ### Using the Makefile
@@ -112,6 +133,8 @@ You can customize the deployment by:
    ```
 
 ## Python Application Setup
+
+The Python scripts are used to create the database and populate some initial values before running the load test.
 
 The Python application is built using Poetry for dependency management.
 

@@ -9,10 +9,6 @@
 crash.log
 crash.*.log
 
-# Ignore any .tfvars files
-*.tfvars
-*.tfvars.json
-
 # Ignore VS Code settings
 .vscode/
 

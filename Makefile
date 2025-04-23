@@ -1,7 +1,7 @@
 # Makefile for Azure Terraform deployment
 
 # Default variables
-SUBSCRIPTION_ID ?= 0b962213-fc84-4c8d-bc1a-2dce59741c5a
+SUBSCRIPTION_ID ?= <your-subscription-id>
 
 .PHONY: help login set-subscription init validate plan apply destroy
 
