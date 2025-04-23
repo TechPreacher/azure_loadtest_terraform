@@ -239,13 +239,13 @@ The script automatically:
 
 ### 👤 Manual Steps for Load Testing
 
-Some aspects of load test configuration may still require manual steps:
+Some aspects of load test configuration may still require manual steps. See the output of the `setup_load_test.sh` script for details.
 
 1. Navigate to the Azure Portal → Azure Load Testing → [Load Test Name] → Tests
 2. Click on the test configuration
 3. Click 'Configure', and ensure:
    - The JDBC driver `postgresql-42.7.5.jar` is uploaded in the 'Additional Files' section
-   - Identity is set to 'User-assigned identity' with the correct managed identity
+   - Identity is set to 'User-assigned identity' with the correct managed identity in the `Test Plan`, `Parameters` and `Monitoring` sections
    - Both PostgreSQL servers are added to the monitoring section
 4. Save the test configuration
 5. Run the test and monitor the performance of both primary and replica servers
