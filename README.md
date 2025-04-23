@@ -5,13 +5,32 @@ The configuration deploys an Azure Load Test resource, an Azure KeyVault, an Azu
 The load test uses an Apache JMeter script to test the database.
 User credentials and JMeter script parameters are stored in the KeyVault.
 
+## Prerequisites
+
+Before you can use this project, you need to have the following tools installed:
+
+- **Python 3.11+**: [Download from python.org](https://www.python.org/downloads/)
+- **Poetry**: [Installation instructions](https://python-poetry.org/docs/#installation)
+- **Terraform 1.5+**: [Download from terraform.io](https://www.terraform.io/downloads)
+- **Azure CLI**: [Installation instructions](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
+- **Git**: [Download from git-scm.com](https://git-scm.com/downloads)
+- **PostgreSQL Client** (optional): [Download from postgresql.org](https://www.postgresql.org/download/)
+- **Streamlit** (for running the web app): Installed via Poetry
+- **Make** (for using the Makefile): Typically pre-installed on Linux/Mac, for Windows use [GnuWin32](http://gnuwin32.sourceforge.net/packages/make.htm)
+
 ## Project Structure
 
 ### Infrastructure as Code
 
 - `terraform/`: Contains the Terraform configuration for deploying all infrastructure
-- `terraform/README.md`: Detailed instructions for the Terraform configuration
+  - `terraform/README.md`: Detailed instructions for the Terraform configuration
+  - `terraform/LOAD_TEST_README.md`: Documentation for the load test setup
+  - `terraform/setup_load_test.sh`: Script to automate load test configuration
+  - `terraform/load_test_variables.env`: Generated environment variables for load testing
+  - `terraform/env_vars.json`: Configuration for local environment variables
 - `load_test_artifacts/`: Contains JMeter script and PostgreSQL JDBC driver for load testing
+  - `load_test_artifacts/jmeter_script.jmx`: JMeter test plan
+  - `load_test_artifacts/postgresql-42.7.5.jar`: JDBC driver for PostgreSQL
 
 ### Python Database Application
 
@@ -92,36 +111,7 @@ poetry shell
 
 ### Configure Database Connection
 
-Create a `.env` file in the `create_database` directory with your PostgreSQL connection details:
-
-```
-# Azure Subscription Settings
-AZURE_SUBSCRIPTION_ID=your-subscription-id
-AZURE_RESOURCE_GROUP=your-resource-group
-
-# Primary PostgreSQL server connection details
-AZURE_POSTGRES_PRIMARY_HOST=your-server.postgres.database.azure.com
-AZURE_POSTGRES_PRIMARY_USER=your-username@your-server
-AZURE_POSTGRES_PRIMARY_PASSWORD=your-password
-AZURE_POSTGRES_PRIMARY_DB=test
-
-# Replica PostgreSQL server connection details (for verify_replication.py)
-AZURE_POSTGRES_REPLICA_HOST=your-replica-server.postgres.database.azure.com
-AZURE_POSTGRES_REPLICA_USER=your-username@your-replica-server
-AZURE_POSTGRES_REPLICA_PASSWORD=your-password
-AZURE_POSTGRES_REPLICA_DB=test
-
-# SSL mode for all connections
-AZURE_POSTGRES_SSL_MODE=require
-
-# For the Streamlit app
-AZURE_POSTGRES_HOST=your-server.postgres.database.azure.com
-AZURE_POSTGRES_USER=your-username@your-server
-AZURE_POSTGRES_PASSWORD=your-password
-AZURE_POSTGRES_DB=test
-```
-
-For the replication verification script, if replica details are not provided, it will try to derive them from the primary server details by appending "repl" to the hostname.
+When running the Terraform scripts, the `/terraform/load_test_variables.env` file is automatically generated which is used for the Python scripts to connect to the primary and the replica databases.
 
 ### Running the Application
 
@@ -173,18 +163,53 @@ The deployment includes a JMeter-based load test configuration with:
 - User Assigned Managed Identity for secure Key Vault access
 - Monitoring of PostgreSQL server metrics during test execution
 
+### Automated Load Test Setup
+
+After deploying the infrastructure with Terraform, you can use the included setup script to configure the load test:
+
+```bash
+# Navigate to the Terraform directory
+cd terraform
+
+# Make the script executable if needed
+chmod +x setup_load_test.sh
+
+# Run the setup script
+./setup_load_test.sh
+```
+
+The script automatically:
+- Creates or updates the load test configuration
+- Sets up the JMeter test with proper parameters
+- Configures Key Vault references for secure credential access
+- Provides guidance for any manual steps that might be needed
+
 ### Manual Steps for Load Testing
 
-After deploying the infrastructure:
+Some aspects of load test configuration may still require manual steps:
 
 1. Navigate to the Azure Portal → Azure Load Testing → [Load Test Name] → Tests
 2. Click on the test configuration
-3. Click 'Edit' and manually upload the following files:
-   - JMeter script: `load_test_artifacts/jmeter_script.jmx`
-   - PostgreSQL JDBC driver: `load_test_artifacts/postgresql-42.7.5.jar` (in the 'Additional Files' section)
+3. Click 'Configure', and ensure:
+   - The JDBC driver `postgresql-42.7.5.jar` is uploaded in the 'Additional Files' section
+   - Identity is set to 'User-assigned identity' with the correct managed identity
+   - Both PostgreSQL servers are added to the monitoring section
 4. Save the test configuration
 5. Run the test and monitor the performance of both primary and replica servers
 
 ## Post-Deployment Steps
 
 The Terraform deployment automatically configures the User Assigned Managed Identity as a Microsoft Entra administrator for the PostgreSQL server. No manual steps are required for the Entra admin configuration.
+
+### Load Test Environment Variables
+
+After deployment, Terraform generates a `load_test_variables.env` file in the terraform directory containing all necessary configuration variables for the load test, including:
+
+- Resource group name and load test resource name
+- PostgreSQL server information (primary and replica)
+- Test parameters (threads, loops, operations per minute)
+- Key Vault secret references
+- Managed identity information
+- File paths for JMeter script and JDBC driver
+
+This file is sourced by the `setup_load_test.sh` script to configure the load test. You can also use it as a reference for manual configuration or troubleshooting.
