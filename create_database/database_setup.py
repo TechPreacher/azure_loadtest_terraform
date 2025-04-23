@@ -34,20 +34,21 @@ from sqlalchemy.orm import sessionmaker, relationship
 
 
 # Load environment variables from .env file if it exists
-env_path = Path(__file__).parent
-env_file = env_path / ".env"
+env_path = Path(__file__).parent.parent / "terraform"
+env_file = env_path / "load_test_variables.env"
 if env_file.exists():
     load_dotenv(env_file)
 else:
-    print("Warning: .env file not found. Using environment variables.")
+    print(f"Warning: {env_file} not found.")
+    sys.exit(1)
 
 # Define database configuration
 DB_CONFIG = {
-    "host": os.environ.get("AZURE_POSTGRES_PRIMARY_HOST"),
-    "user": os.environ.get("AZURE_POSTGRES_PRIMARY_USER"),
-    "password": os.environ.get("AZURE_POSTGRES_PRIMARY_PASSWORD"),
-    "database": os.environ.get("AZURE_POSTGRES_PRIMARY_DB"),
-    "sslmode": os.environ.get("AZURE_POSTGRES_PRIMARY_SSL_MODE", "require"),
+    "host": os.environ.get("PRIMARY_SERVER_FQDN"),
+    "user": os.environ.get("POSTGRES_ADMIN_USERNAME"),
+    "password": os.environ.get("POSTGRES_ADMIN_PASSWORD"),
+    "database": os.environ.get("DATABASE_NAME"),
+    "sslmode": "require",
 }
 
 # Define SQLAlchemy Base and Models
@@ -96,10 +97,10 @@ class Order(Base):
 def check_env_vars() -> bool:
     """Verify all required environment variables are set."""
     required_vars = [
-        "AZURE_POSTGRES_PRIMARY_HOST",
-        "AZURE_POSTGRES_PRIMARY_USER",
-        "AZURE_POSTGRES_PRIMARY_PASSWORD",
-        "AZURE_POSTGRES_PRIMARY_DB",
+        "PRIMARY_SERVER_FQDN",
+        "POSTGRES_ADMIN_USERNAME",
+        "POSTGRES_ADMIN_PASSWORD",
+        "DATABASE_NAME",
     ]
 
     missing_vars = [var for var in required_vars if not os.environ.get(var)]

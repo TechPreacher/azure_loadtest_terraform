@@ -31,3 +31,4 @@ __pycache__/
 
 # Terraform generated scripts
 terraform/load_test_variables.env
+terraform/load_test_variables.sh

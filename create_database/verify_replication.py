@@ -26,50 +26,41 @@ from sqlalchemy import (
 from sqlalchemy.exc import SQLAlchemyError
 
 # Load environment variables from .env file if it exists
-env_path = Path(__file__).parent / ".env"
-if env_path.exists():
-    load_dotenv(env_path)
+env_path = Path(__file__).parent.parent / "terraform"
+env_file = env_path / "load_test_variables.env"
+if env_file.exists():
+    load_dotenv(env_file)
 else:
-    print("Warning: .env file not found. Using environment variables.")
+    print(f"Warning: {env_file} not found.")
+    sys.exit(1)
 
 # Define config values for both database types
 PRIMARY_DB_CONFIG = {
-    "host": os.environ.get("AZURE_POSTGRES_PRIMARY_HOST"),
-    "user": os.environ.get("AZURE_POSTGRES_PRIMARY_USER"),
-    "password": os.environ.get("AZURE_POSTGRES_PRIMARY_PASSWORD"),
-    "database": os.environ.get("AZURE_POSTGRES_PRIMARY_DB"),
-    "sslmode": os.environ.get("AZURE_POSTGRES_SSL_MODE", "require"),
+    "host": os.environ.get("PRIMARY_SERVER_FQDN"),
+    "user": os.environ.get("POSTGRES_ADMIN_USERNAME"),
+    "password": os.environ.get("POSTGRES_ADMIN_PASSWORD"),
+    "database": os.environ.get("DATABASE_NAME"),
+    "sslmode": "require",
 }
 
-# Get primary host for potential replica host creation
-primary_host = os.environ.get("AZURE_POSTGRES_PRIMARY_HOST")
-replica_host = os.environ.get("AZURE_POSTGRES_REPLICA_HOST")
-
-# Build replica host with suffix if primary exists and replica isn't specified
-derived_replica_host = None
-if primary_host and not replica_host:
-    derived_replica_host = f"{primary_host}repl"
-
 REPLICA_DB_CONFIG = {
-    "host": replica_host or derived_replica_host,
-    "user": os.environ.get("AZURE_POSTGRES_REPLICA_USER")
-    or os.environ.get("AZURE_POSTGRES_PRIMARY_USER"),
-    "password": os.environ.get("AZURE_POSTGRES_REPLICA_PASSWORD")
-    or os.environ.get("AZURE_POSTGRES_PRIMARY_PASSWORD"),
-    "database": os.environ.get("AZURE_POSTGRES_REPLICA_DB")
-    or os.environ.get("AZURE_POSTGRES_PRIMARY_DB"),
-    "sslmode": os.environ.get("AZURE_POSTGRES_SSL_MODE", "require"),
+    "host": os.environ.get("REPLICA_SERVER_FQDN"),
+    "user": os.environ.get("POSTGRES_ADMIN_USERNAME"),
+    "password": os.environ.get("POSTGRES_ADMIN_PASSWORD"),
+    "database": os.environ.get("DATABASE_NAME"),
+    "sslmode": "require",
 }
 
 
 def check_env_vars() -> bool:
     """Verify all required environment variables are set."""
-    # Primary database connection variables are required
+    # Database connection variables are required
     primary_vars = [
-        "AZURE_POSTGRES_PRIMARY_HOST",
-        "AZURE_POSTGRES_PRIMARY_USER",
-        "AZURE_POSTGRES_PRIMARY_PASSWORD",
-        "AZURE_POSTGRES_PRIMARY_DB",
+        "PRIMARY_SERVER_FQDN",
+        "REPLICA_SERVER_FQDN",
+        "POSTGRES_ADMIN_USERNAME",
+        "POSTGRES_ADMIN_PASSWORD",
+        "DATABASE_NAME",
     ]
 
     primary_missing = [var for var in primary_vars if not os.environ.get(var)]
@@ -83,13 +74,6 @@ def check_env_vars() -> bool:
             "with your Azure PostgreSQL credentials."
         )
         sys.exit(1)
-
-    # For replica, we'll try to derive from primary if not specified
-    if not os.environ.get("AZURE_POSTGRES_REPLICA_HOST"):
-        print(
-            "Warning: AZURE_POSTGRES_REPLICA_HOST not set. "
-            f"Using {PRIMARY_DB_CONFIG['host']}repl as replica host."
-        )
 
     return True
 
