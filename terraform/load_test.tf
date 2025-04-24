@@ -27,10 +27,10 @@ DATABASE_NAME="${var.postgres_database_name}"
 # Test parameters
 MAIN_THREADS=${var.main_threads}
 MAIN_LOOPS=${var.main_loops}
-MAIN_DATABASE="jdbc:${azurerm_postgresql_flexible_server.primary.fqdn}:5432/${var.postgres_database_name}"
+MAIN_DATABASE="jdbc:postgresql://${azurerm_postgresql_flexible_server.primary.fqdn}:5432/${var.postgres_database_name}"
 REPLICA_THREADS=${var.replica_threads}
 REPLICA_LOOPS=${var.replica_loops}
-REPLICA_DATABASE="jdbc:${azurerm_postgresql_flexible_server.replica.fqdn}:5432/${var.postgres_database_name}"
+REPLICA_DATABASE="jdbc:postgresql://${azurerm_postgresql_flexible_server.replica.fqdn}:5432/${var.postgres_database_name}"
 MAIN_WRITES_PER_MINUTE=${var.main_writes_per_minute}
 REPLICA_READS_PER_MINUTE=${var.replica_reads_per_minute}
 
