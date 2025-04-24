@@ -32,8 +32,9 @@ foreach ($Line in $FileContent) {
     }
     
     # Set the environment variable for the current process
-    [System.Environment]::SetEnvironmentVariable($VarName, $VarValue, [System.EnvironmentVariableTarget]::Process)
+    Set-Variable -Name $VarName -Value $VarValue
     Write-Host "Exported: $VarName=$VarValue"
+
 }
 
 Write-Host "Environment variables from $EnvFile have been loaded."
