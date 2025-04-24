@@ -138,15 +138,17 @@ terraform destroy -var="subscription_id=your-subscription-id"
 ```
 
 You can customize the deployment by:
+
 1. Editing variables directly in the terraform files
 2. Creating a `terraform.tfvars` file with your custom values
 3. Passing variables on the command line:
-   ```bash
-   terraform apply \
-     -var="subscription_id=your-subscription-id" \
-     -var="resource_group_name=my-custom-rg" \
-     -var="location=westeurope"
-   ```
+   
+```bash
+terraform apply \
+  -var="subscription_id=your-subscription-id" \
+  -var="resource_group_name=my-custom-rg" \
+  -var="location=westeurope"
+```
 
 ## 🐍 Python Application Setup
 
@@ -234,6 +236,7 @@ chmod +x set_load_test_env.sh
 
 # Load environment variables into your shell session
 source ./set_load_test_env.sh
+
 # Run the setup script
 ./setup_load_test.sh
 ```
@@ -248,7 +251,7 @@ cd terraform
 . .\Set-LoadTestEnv.ps1
 
 # Run the setup script
-.\setup_load_test.ps1
+.\Setup-LoadTest.ps1
 ```
 
 The script automatically:
