@@ -32,6 +32,8 @@ Before you can use this project, you need to have the following tools installed:
   - `terraform/load_test.tf`: Load test specific resources
   - `terraform/setup_load_test.sh`: Script to automate load test configuration
   - `terraform/load_test_variables.env`: Generated environment variables for load testing
+  - `terraform/set_load_test_env.sh`: Bash script to load environment variables
+  - `terraform/Set-LoadTestEnv.ps1`: PowerShell script to load environment variables
   - `terraform/env_vars.json`: Configuration for local environment variables
 - `load_test_artifacts/`: Contains JMeter script and PostgreSQL JDBC driver for load testing
   - `load_test_artifacts/jmeter_script.jmx`: JMeter test plan
@@ -218,20 +220,39 @@ The deployment includes a JMeter-based load test configuration with:
 
 ### 🤖 Automated Load Test Setup
 
-After deploying the infrastructure with Terraform, you can use the included setup script to configure the load test:
+After deploying the infrastructure with Terraform, you can use the included setup script to configure the load test. The setup script needs the environment variables to be loaded into your shell:
+
+#### Mac/Linux
 
 ```bash
 # Navigate to the Terraform directory
 cd terraform
 
-# Make the script executable if needed
+# Make the scripts executable if needed
 chmod +x setup_load_test.sh
+chmod +x set_load_test_env.sh
 
+# Load environment variables into your shell session
+source ./set_load_test_env.sh
 # Run the setup script
 ./setup_load_test.sh
 ```
 
+#### Windows
+
+```powershell
+# Navigate to the Terraform directory
+cd terraform
+
+# Load environment variables into your shell session
+. .\Set-LoadTestEnv.ps1
+
+# Run the setup script
+.\setup_load_test.ps1
+```
+
 The script automatically:
+
 - Creates or updates the load test configuration
 - Sets up the JMeter test with proper parameters
 - Configures Key Vault references for secure credential access
@@ -265,7 +286,31 @@ After deployment, Terraform generates a `load_test_variables.env` file in the te
 - Managed identity information
 - File paths for JMeter script and JDBC driver
 
-This file is sourced by the `setup_load_test.sh` script to configure the load test. You can also use it as a reference for manual configuration or troubleshooting.
+#### Loading Variables into Your Shell
+
+To use these environment variables in shell scripts that configure the load test, you can use the following utilities:
+
+##### Bash/Linux:
+
+```bash
+# Source the environment variables loader script
+source ./set_load_test_env.sh
+```
+
+##### PowerShell/Windows:
+
+```powershell
+# Load the environment variables
+. .\Set-LoadTestEnv.ps1
+```
+
+These scripts read the `load_test_variables.env` file and export each variable to your shell session, making them available to any scripts or commands you run.
+
+#### Python Scripts
+
+Python scripts in this project read the `/terraform/load_test_variables.env` file directly and don't require these shell scripts.
+
+You can also use the raw `/terraform/load_test_variables.env` file as a reference for manual configuration or troubleshooting.
 
 ## 🛡️ Terraform Reliability Features
 
