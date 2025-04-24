@@ -15,17 +15,13 @@ if (-Not (Test-Path -Path $VariablesFile)) {
 # Source the variables and verify they are loaded
 Write-Host "`n💾 Loading configuration from $VariablesFile..."
 . $VariableScript
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "`n❌ Error: Failed to load variables from $VariablesFile"
-    exit 1
-}
 
 # Check if the Azure CLI load testing extension is installed
 Write-Host "`n🔍 Checking for Azure CLI load testing extension..."
 $ExtensionInstalled = az extension list | ConvertFrom-Json | Where-Object { $_.name -eq "load-testing" }
 if (-Not $ExtensionInstalled) {
     Write-Host "Installing Azure CLI load testing extension..."
-    az extension add -n load-testing
+    az extension add -n load
 }
 
 # Get current subscription ID
