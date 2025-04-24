@@ -344,6 +344,38 @@ These features help avoid common deployment issues with Azure PostgreSQL Flexibl
 - Timing issues with replica creation
 - Secret creation failures
 
+## 📈 Running the test and analyzing the results
+
+To run the load test, simply press the run button in the portal: 
+
+![img](media/run-test.png)
+
+When the test status is "Done", click on it to check the results. By default there will be some statistics already displayed and some graphs plotting the metrics.
+Add more metrics by clicking "Configure metrics" and selecting "Read Replica Lag" for the replica DB and "Max Physical Replication Lag" for the main DB. 
+
+![img](media/configure-metrics.png)
+
+![img](media/add-metrics.png)
+
+The default test configuration should yield good metrics: 
+
+![img](media/default-metrics-client.png)
+
+![img](media/default-metrics-server.png)
+
+### Increasing the test load 
+
+To stress the DB further, you can edit the test parameters either in the portal (Select the load test, click configure -> Test -> Parameters) or by changing the variables in `terraform.tfvars` and redeploying everything.
+
+![img](media/stress-test-config.png)
+
+There is a significant degradation in the performance in this case. The replica does not get updated until the end of the test which lasts around 2h. 
+
+![img](media/stress-metrics-client.png)
+
+![img](media/stress-metrics-server.png)
+
+
 ## 📝 Notes
 
 - The PostgreSQL password is stored in the Terraform state file in plaintext. For production, consider using a more secure approach for secrets management.
