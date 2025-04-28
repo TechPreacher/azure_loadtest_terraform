@@ -22,7 +22,10 @@ echo
 echo "🔍 Checking for Azure CLI load testing extension..."
 if ! az extension list | grep -q "load"; then
   echo "Installing Azure CLI load testing extension..."
-  az extension add -n load
+  if ! az extension add -n load; then
+    echo "Can't install Azure CLI load testing extension, please update your Azure CLI" 
+    echo "Exiting" && exit
+    fi
 fi
 
 # Get current subscription ID
